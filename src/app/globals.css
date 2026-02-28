@@ -1,56 +1,110 @@
 /* ============================================================
    Budget Public — Styles globaux
-   Police : DM Sans (modernisée) + Marianne fallback
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
 
-/* --- Variables CSS ---------------------------------------- */
+/* --- Variables MODE CLAIR (défaut) ------------------------ */
 :root {
-  /* Couleurs principales */
-  --bleu-marine:    #003189;
-  --bleu-moyen:     #1E4E8C;
-  --bleu-clair:     #E8EEF8;
-  --bleu-pale:      #F0F4FC;
-  --rouge-accent:   #C1292E;
-  --rouge-pale:     #FDF0F0;
+  --bleu-marine:      #003189;
+  --bleu-moyen:       #1E4E8C;
+  --bleu-clair:       #E8EEF8;
+  --bleu-pale:        #F0F4FC;
+  --rouge-accent:     #C1292E;
+  --rouge-pale:       #FDF0F0;
 
-  /* Fond & texte */
-  --fond:           #F8F9FB;
-  --blanc:          #FFFFFF;
-  --texte-primaire: #111827;
+  --fond:             #F8F9FB;
+  --blanc:            #FFFFFF;
+  --surface:          #FFFFFF;
+  --surface-elevee:   #FFFFFF;
+
+  --texte-primaire:   #111827;
   --texte-secondaire: #4B5563;
   --texte-tertiaire:  #9CA3AF;
 
-  /* Bordures */
-  --bordure:        #E5E7EB;
-  --bordure-forte:  #D1D5DB;
+  --bordure:          #E5E7EB;
+  --bordure-forte:    #D1D5DB;
 
-  /* Ombres */
   --ombre-xs: 0 1px 2px rgba(0,0,0,.05);
   --ombre-sm: 0 2px 8px rgba(0,49,137,.07);
   --ombre-md: 0 4px 20px rgba(0,49,137,.10);
   --ombre-lg: 0 8px 40px rgba(0,49,137,.12);
 
-  /* Typographie */
   --font-sans: 'DM Sans', 'Marianne', 'Inter', system-ui, sans-serif;
   --font-mono: 'DM Mono', 'Courier New', monospace;
 
-  /* Rayons */
-  --radius-sm:   6px;
-  --radius-md:   10px;
-  --radius-lg:   16px;
-  --radius-xl:   24px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
 
-  /* Transitions */
   --transition: 200ms cubic-bezier(.4,0,.2,1);
 }
 
-/* --- Reset de base ---------------------------------------- */
+/* --- Variables MODE SOMBRE -------------------------------- */
+:root[data-theme="dark"],
+:root:not([data-theme="light"]):has(body) {
+  color-scheme: dark;
+}
+
+[data-theme="dark"],
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fond:             #080C14;
+    --blanc:            #0F1420;
+    --surface:          #0F1420;
+    --surface-elevee:   #161D2E;
+    --bleu-pale:        #111827;
+    --bleu-clair:       #1A2540;
+    --rouge-pale:       #1A0A0B;
+
+    --texte-primaire:   #EEF2FF;
+    --texte-secondaire: #94A3C0;
+    --texte-tertiaire:  #4A5A7A;
+
+    --bordure:          rgba(148,163,192,.12);
+    --bordure-forte:    rgba(148,163,192,.22);
+
+    --ombre-xs: 0 1px 4px rgba(0,0,0,.5);
+    --ombre-sm: 0 2px 8px rgba(0,0,0,.4);
+    --ombre-md: 0 4px 20px rgba(0,0,0,.5);
+    --ombre-lg: 0 8px 40px rgba(0,0,0,.6);
+  }
+}
+
+:root[data-theme="dark"] {
+  --fond:             #080C14;
+  --blanc:            #0F1420;
+  --surface:          #0F1420;
+  --surface-elevee:   #161D2E;
+  --bleu-pale:        #111827;
+  --bleu-clair:       #1A2540;
+  --rouge-pale:       #1A0A0B;
+
+  --texte-primaire:   #EEF2FF;
+  --texte-secondaire: #94A3C0;
+  --texte-tertiaire:  #4A5A7A;
+
+  --bordure:          rgba(148,163,192,.12);
+  --bordure-forte:    rgba(148,163,192,.22);
+
+  --ombre-xs: 0 1px 4px rgba(0,0,0,.5);
+  --ombre-sm: 0 2px 8px rgba(0,0,0,.4);
+  --ombre-md: 0 4px 20px rgba(0,0,0,.5);
+  --ombre-lg: 0 8px 40px rgba(0,0,0,.6);
+}
+
+/* --- Reset ------------------------------------------------ */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  transition:
+    background-color .25s ease,
+    background .25s ease,
+    border-color .2s ease,
+    color .15s ease,
+    box-shadow .2s ease;
 }
 
 html {
@@ -68,7 +122,62 @@ body {
   min-height: 100dvh;
 }
 
-/* --- Typographie globale ---------------------------------- */
+/* --- Forcer les surfaces blanches hardcodées -------------- */
+/* Ces sélecteurs ciblent les éléments qui utilisent
+   background: white / #fff / #ffffff directement */
+
+[data-theme="dark"] main,
+[data-theme="dark"] section,
+[data-theme="dark"] article,
+[data-theme="dark"] aside,
+[data-theme="dark"] div:not([style*="bleu-marine"]):not([style*="gradient"]):not([style*="#003"]):not([style*="linear"]) {
+  color: inherit;
+}
+
+/* Tooltip Recharts */
+[data-theme="dark"] .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: var(--surface-elevee) !important;
+  border-color: var(--bordure) !important;
+  color: var(--texte-primaire) !important;
+}
+[data-theme="dark"] .recharts-tooltip-item {
+  color: var(--texte-secondaire) !important;
+}
+[data-theme="dark"] .recharts-legend-item-text {
+  color: var(--texte-secondaire) !important;
+}
+[data-theme="dark"] .recharts-cartesian-grid line {
+  stroke: rgba(255,255,255,.05) !important;
+}
+[data-theme="dark"] .recharts-text {
+  fill: var(--texte-secondaire) !important;
+}
+
+/* Inputs */
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  background: var(--surface-elevee) !important;
+  color: var(--texte-primaire) !important;
+  border-color: var(--bordure) !important;
+}
+
+/* Tables */
+[data-theme="dark"] table {
+  color: var(--texte-primaire);
+}
+[data-theme="dark"] th {
+  color: var(--texte-secondaire) !important;
+}
+
+/* Dropdown suggestions */
+[data-theme="dark"] ul[style*="background: white"],
+[data-theme="dark"] ul[style*="background:white"] {
+  background: var(--surface-elevee) !important;
+  border-color: var(--bordure) !important;
+}
+
+/* --- Typographie ------------------------------------------ */
 h1, h2, h3, h4, h5, h6 {
   line-height: 1.2;
   font-weight: 700;
@@ -84,13 +193,12 @@ a {
 }
 a:hover { color: var(--bleu-marine); }
 
-/* --- Sélection de texte ----------------------------------- */
 ::selection {
   background-color: var(--bleu-clair);
   color: var(--bleu-marine);
 }
 
-/* --- Barre de défilement ---------------------------------- */
+/* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--fond); }
 ::-webkit-scrollbar-thumb {
@@ -99,14 +207,13 @@ a:hover { color: var(--bleu-marine); }
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--bleu-moyen); }
 
-/* --- Focus accessible ------------------------------------- */
 :focus-visible {
   outline: 2px solid var(--bleu-moyen);
   outline-offset: 3px;
   border-radius: var(--radius-sm);
 }
 
-/* --- Animations globales ---------------------------------- */
+/* --- Animations ------------------------------------------- */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -120,32 +227,25 @@ a:hover { color: var(--bleu-marine); }
   50%       { opacity: .6; }
 }
 
-.animate-fade-in-up {
-  animation: fadeInUp .5s ease both;
-}
-.animate-fade-in {
-  animation: fadeIn .4s ease both;
-}
-
-/* Délais d'animation en cascade */
+.animate-fade-in-up { animation: fadeInUp .5s ease both; }
+.animate-fade-in    { animation: fadeIn .4s ease both; }
 .delay-1 { animation-delay: .1s; }
 .delay-2 { animation-delay: .2s; }
 .delay-3 { animation-delay: .3s; }
 .delay-4 { animation-delay: .4s; }
 
-/* --- Utilitaires de mise en page -------------------------- */
+/* --- Layout ----------------------------------------------- */
 .container {
   width: 100%;
   max-width: 1200px;
   margin-inline: auto;
   padding-inline: 1.5rem;
 }
-
 @media (min-width: 768px) {
   .container { padding-inline: 2.5rem; }
 }
 
-/* --- Boutons globaux -------------------------------------- */
+/* --- Boutons ---------------------------------------------- */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -164,11 +264,11 @@ a:hover { color: var(--bleu-marine); }
 
 .btn-primary {
   background: var(--bleu-marine);
-  color: var(--blanc);
+  color: #ffffff;
 }
 .btn-primary:hover {
   background: var(--bleu-moyen);
-  color: var(--blanc);
+  color: #ffffff;
   transform: translateY(-1px);
   box-shadow: var(--ombre-md);
 }
@@ -183,76 +283,19 @@ a:hover { color: var(--bleu-marine); }
   color: var(--bleu-marine);
 }
 
+[data-theme="dark"] .btn-outline {
+  color: #7B9FE0;
+  border-color: #7B9FE0;
+}
+[data-theme="dark"] .btn-outline:hover {
+  background: var(--bleu-pale);
+  color: #A0BFFF;
+}
+
 /* --- Divider ---------------------------------------------- */
 .divider {
   width: 48px;
   height: 4px;
   background: var(--rouge-accent);
   border-radius: 2px;
-}
-
-/* ============================================================
-   MODE SOMBRE — variables et overrides
-   ============================================================ */
-
-/* Détection automatique préférence système */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --blanc:            #0F1117;
-    --bleu-pale:        #161B27;
-    --texte-primaire:   #F0F4FF;
-    --texte-secondaire: #9BAACB;
-    --texte-tertiaire:  #5A6A8A;
-    --bordure:          rgba(255,255,255,.08);
-    --ombre-xs:         0 1px 4px rgba(0,0,0,.4);
-    --bg-input:         #1A2035;
-  }
-}
-
-/* Mode sombre forcé via bouton */
-:root[data-theme="dark"] {
-  --blanc:            #0F1117;
-  --bleu-pale:        #161B27;
-  --texte-primaire:   #F0F4FF;
-  --texte-secondaire: #9BAACB;
-  --texte-tertiaire:  #5A6A8A;
-  --bordure:          rgba(255,255,255,.08);
-  --ombre-xs:         0 1px 4px rgba(0,0,0,.4);
-  --bg-input:         #1A2035;
-}
-
-/* Mode clair forcé via bouton */
-:root[data-theme="light"] {
-  --blanc:            #FFFFFF;
-  --bleu-pale:        #F0F4FF;
-  --texte-primaire:   #0D1B3E;
-  --texte-secondaire: #4A5568;
-  --texte-tertiaire:  #9BAACB;
-  --bordure:          rgba(0,49,137,.1);
-  --ombre-xs:         0 1px 4px rgba(0,0,0,.06);
-  --bg-input:         #FFFFFF;
-}
-
-/* Transitions douces au changement de thème */
-*, *::before, *::after {
-  transition: background-color .25s ease, border-color .25s ease, color .15s ease;
-}
-
-/* Inputs en mode sombre */
-:root[data-theme="dark"] input,
-:root:not([data-theme="light"]) input {
-  background: var(--bg-input) !important;
-  color: var(--texte-primaire) !important;
-  border-color: var(--bordure) !important;
-}
-
-/* Cards et surfaces en mode sombre */
-:root[data-theme="dark"] .recharts-cartesian-grid line,
-:root:not([data-theme="light"]) .recharts-cartesian-grid line {
-  stroke: rgba(255,255,255,.06) !important;
-}
-
-:root[data-theme="dark"] .recharts-text,
-:root:not([data-theme="light"]) .recharts-text {
-  fill: var(--texte-secondaire) !important;
 }

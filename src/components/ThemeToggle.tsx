@@ -36,19 +36,26 @@ export default function ThemeToggle() {
     return () => mq.removeEventListener("change", handler);
   }, [theme, mounted]);
 
-  const applyTheme = (t: Theme) => {
-    const root = document.documentElement;
-    if (t === "dark") {
+const applyTheme = (t: Theme) => {
+  const root = document.documentElement;
+  if (t === "dark") {
+    root.setAttribute("data-theme", "dark");
+    setIsDark(true);
+  } else if (t === "light") {
+    root.setAttribute("data-theme", "light");
+    setIsDark(false);
+  } else {
+    // System : applique quand même dark/light selon l'OS
+    // pour que les styles CSS [data-theme] fonctionnent
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if (prefersDark) {
       root.setAttribute("data-theme", "dark");
-      setIsDark(true);
-    } else if (t === "light") {
-      root.setAttribute("data-theme", "light");
-      setIsDark(false);
     } else {
-      root.removeAttribute("data-theme");
-      setIsDark(getSystemDark());
+      root.setAttribute("data-theme", "light");
     }
-  };
+    setIsDark(prefersDark);
+  }
+};
 
   const cycleTheme = () => {
     // Cycle : system → light → dark → system
