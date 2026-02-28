@@ -41,37 +41,7 @@
   --transition: 200ms cubic-bezier(.4,0,.2,1);
 }
 
-/* --- Variables MODE SOMBRE -------------------------------- */
-:root[data-theme="dark"],
-:root:not([data-theme="light"]):has(body) {
-  color-scheme: dark;
-}
-
-[data-theme="dark"],
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --fond:             #080C14;
-    --blanc:            #0F1420;
-    --surface:          #0F1420;
-    --surface-elevee:   #161D2E;
-    --bleu-pale:        #111827;
-    --bleu-clair:       #1A2540;
-    --rouge-pale:       #1A0A0B;
-
-    --texte-primaire:   #EEF2FF;
-    --texte-secondaire: #94A3C0;
-    --texte-tertiaire:  #4A5A7A;
-
-    --bordure:          rgba(148,163,192,.12);
-    --bordure-forte:    rgba(148,163,192,.22);
-
-    --ombre-xs: 0 1px 4px rgba(0,0,0,.5);
-    --ombre-sm: 0 2px 8px rgba(0,0,0,.4);
-    --ombre-md: 0 4px 20px rgba(0,0,0,.5);
-    --ombre-lg: 0 8px 40px rgba(0,0,0,.6);
-  }
-}
-
+/* --- Variables MODE SOMBRE — forcé via bouton ------------- */
 :root[data-theme="dark"] {
   --fond:             #080C14;
   --blanc:            #0F1420;
@@ -94,6 +64,54 @@
   --ombre-lg: 0 8px 40px rgba(0,0,0,.6);
 }
 
+/* --- Variables MODE CLAIR — forcé via bouton -------------- */
+:root[data-theme="light"] {
+  --fond:             #F8F9FB;
+  --blanc:            #FFFFFF;
+  --surface:          #FFFFFF;
+  --surface-elevee:   #FFFFFF;
+  --bleu-pale:        #F0F4FC;
+  --bleu-clair:       #E8EEF8;
+  --rouge-pale:       #FDF0F0;
+
+  --texte-primaire:   #111827;
+  --texte-secondaire: #4B5563;
+  --texte-tertiaire:  #9CA3AF;
+
+  --bordure:          #E5E7EB;
+  --bordure-forte:    #D1D5DB;
+
+  --ombre-xs: 0 1px 2px rgba(0,0,0,.05);
+  --ombre-sm: 0 2px 8px rgba(0,49,137,.07);
+  --ombre-md: 0 4px 20px rgba(0,49,137,.10);
+  --ombre-lg: 0 8px 40px rgba(0,49,137,.12);
+}
+
+/* --- Variables MODE SOMBRE — détection système ------------ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    --fond:             #080C14;
+    --blanc:            #0F1420;
+    --surface:          #0F1420;
+    --surface-elevee:   #161D2E;
+    --bleu-pale:        #111827;
+    --bleu-clair:       #1A2540;
+    --rouge-pale:       #1A0A0B;
+
+    --texte-primaire:   #EEF2FF;
+    --texte-secondaire: #94A3C0;
+    --texte-tertiaire:  #4A5A7A;
+
+    --bordure:          rgba(148,163,192,.12);
+    --bordure-forte:    rgba(148,163,192,.22);
+
+    --ombre-xs: 0 1px 4px rgba(0,0,0,.5);
+    --ombre-sm: 0 2px 8px rgba(0,0,0,.4);
+    --ombre-md: 0 4px 20px rgba(0,0,0,.5);
+    --ombre-lg: 0 8px 40px rgba(0,0,0,.6);
+  }
+}
+
 /* --- Reset ------------------------------------------------ */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -101,7 +119,6 @@
   padding: 0;
   transition:
     background-color .25s ease,
-    background .25s ease,
     border-color .2s ease,
     color .15s ease,
     box-shadow .2s ease;
@@ -122,21 +139,9 @@ body {
   min-height: 100dvh;
 }
 
-/* --- Forcer les surfaces blanches hardcodées -------------- */
-/* Ces sélecteurs ciblent les éléments qui utilisent
-   background: white / #fff / #ffffff directement */
-
-[data-theme="dark"] main,
-[data-theme="dark"] section,
-[data-theme="dark"] article,
-[data-theme="dark"] aside,
-[data-theme="dark"] div:not([style*="bleu-marine"]):not([style*="gradient"]):not([style*="#003"]):not([style*="linear"]) {
-  color: inherit;
-}
-
-/* Tooltip Recharts */
-[data-theme="dark"] .recharts-tooltip-wrapper .recharts-default-tooltip {
-  background: var(--surface-elevee) !important;
+/* --- Recharts mode sombre --------------------------------- */
+[data-theme="dark"] .recharts-default-tooltip {
+  background-color: var(--surface-elevee) !important;
   border-color: var(--bordure) !important;
   color: var(--texte-primaire) !important;
 }
@@ -153,7 +158,21 @@ body {
   fill: var(--texte-secondaire) !important;
 }
 
-/* Inputs */
+/* Même chose pour thème système */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) .recharts-default-tooltip {
+    background-color: var(--surface-elevee) !important;
+    border-color: var(--bordure) !important;
+  }
+  :root:not([data-theme="light"]):not([data-theme="dark"]) .recharts-cartesian-grid line {
+    stroke: rgba(255,255,255,.05) !important;
+  }
+  :root:not([data-theme="light"]):not([data-theme="dark"]) .recharts-text {
+    fill: var(--texte-secondaire) !important;
+  }
+}
+
+/* --- Inputs mode sombre ----------------------------------- */
 [data-theme="dark"] input,
 [data-theme="dark"] textarea,
 [data-theme="dark"] select {
@@ -162,19 +181,17 @@ body {
   border-color: var(--bordure) !important;
 }
 
-/* Tables */
-[data-theme="dark"] table {
-  color: var(--texte-primaire);
-}
-[data-theme="dark"] th {
-  color: var(--texte-secondaire) !important;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) input {
+    background: var(--surface-elevee) !important;
+    color: var(--texte-primaire) !important;
+    border-color: var(--bordure) !important;
+  }
 }
 
-/* Dropdown suggestions */
-[data-theme="dark"] ul[style*="background: white"],
-[data-theme="dark"] ul[style*="background:white"] {
-  background: var(--surface-elevee) !important;
-  border-color: var(--bordure) !important;
+/* --- Tables mode sombre ----------------------------------- */
+[data-theme="dark"] th {
+  color: var(--texte-secondaire) !important;
 }
 
 /* --- Typographie ------------------------------------------ */
@@ -198,7 +215,7 @@ a:hover { color: var(--bleu-marine); }
   color: var(--bleu-marine);
 }
 
-/* Scrollbar */
+/* --- Scrollbar -------------------------------------------- */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--fond); }
 ::-webkit-scrollbar-thumb {
