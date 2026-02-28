@@ -1,5 +1,3 @@
-// src/app/communes/[code]/page.tsx
-// Page de détail d'une commune — données OFGL + graphiques
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import {
@@ -15,7 +13,6 @@ interface Props {
   params: { code: string };
 }
 
-// Génère les métadonnées SEO dynamiquement
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const nomRes = await fetch(
     `https://geo.api.gouv.fr/communes/${params.code}?fields=nom`,
@@ -24,16 +21,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: `Budget de ${nomRes.nom} — Budget Public`,
-    description: `Consultez les dépenses, investissements et la dette de la commune de ${nomRes.nom}. Données officielles DGFiP/OFGL.`,
+    description: `Dépenses, investissements et dette de ${nomRes.nom}. Données officielles DGFiP/OFGL.`,
   };
 }
 
 export default async function PageCommune({ params }: Props) {
-  // Chargement parallèle des données
   const [nomRes, finances, historique] = await Promise.all([
-    fetch(`https://geo.api.gouv.fr/communes/${params.code}?fields=nom,population,codeDepartement`, {
-      next: { revalidate: 86400 },
-    }).then((r) => r.json()).catch(() => null),
+    fetch(
+      `https://geo.api.gouv.fr/communes/${params.code}?fields=nom,population,codeDepartement`,
+      { next: { revalidate: 86400 } }
+    ).then((r) => r.json()).catch(() => null),
     getFinancesCommune(params.code, 2024),
     getHistoriqueCommune(params.code),
   ]);
@@ -44,12 +41,22 @@ export default async function PageCommune({ params }: Props) {
   const population: number = nomRes.population ?? 0;
   const departement: string = nomRes.codeDepartement ?? "";
 
+  const indicateurs = finances
+    ? [
+        { label: "Dépenses fonctionnement", value: formaterMontant(finances.depenses_fonctionnement), color: "var(--bleu-moyen)" },
+        { label: "Investissements",          value: formaterMontant(finances.depenses_investissement), color: "#0891B2" },
+        { label: "Encours de dette",          value: formaterMontant(finances.encours_dette),           color: "var(--rouge-accent)" },
+        { label: "Dépenses / habitant",       value: `${finances.depenses_par_habitant?.toLocaleString("fr-FR")} €`, color: "#7C3AED" },
+        { label: "Dette / habitant",          value: `${finances.dette_par_habitant?.toLocaleString("fr-FR")} €`,    color: "#D97706" },
+      ]
+    : [];
+
   return (
     <>
       <Header />
       <main>
 
-        {/* === HERO COMMUNE === */}
+        {/* HERO */}
         <section
           style={{
             background: "linear-gradient(135deg, var(--bleu-marine) 0%, var(--bleu-moyen) 100%)",
@@ -58,8 +65,8 @@ export default async function PageCommune({ params }: Props) {
         >
           <div className="container">
             
-               href="/"
-                 style={{
+              href="/"
+              style={{
                 color: "rgba(255,255,255,.6)",
                 fontSize: ".875rem",
                 display: "inline-flex",
@@ -67,10 +74,10 @@ export default async function PageCommune({ params }: Props) {
                 gap: ".375rem",
                 marginBottom: "1.5rem",
                 textDecoration: "none",
-                }}
-                >
-                {"← Retour à l'accueil"}
-                </a>
+              }}
+            >
+              {"← Retour à l'accueil"}
+            </a>
             <h1
               style={{
                 color: "white",
@@ -82,13 +89,12 @@ export default async function PageCommune({ params }: Props) {
               {nom}
             </h1>
             <p style={{ color: "rgba(255,255,255,.65)", fontSize: "1rem" }}>
-              Département {departement} · {population.toLocaleString("fr-FR")} habitants
-              · Données 2024 (OFGL / DGFiP)
+              {"Département " + departement + " · " + population.toLocaleString("fr-FR") + " habitants · Données 2024 (OFGL / DGFiP)"}
             </p>
           </div>
         </section>
 
-        {/* === CARTES INDICATEURS === */}
+        {/* INDICATEURS + GRAPHIQUES */}
         {finances ? (
           <section style={{ padding: "3rem 0" }}>
             <div className="container">
@@ -100,33 +106,7 @@ export default async function PageCommune({ params }: Props) {
                   marginBottom: "3rem",
                 }}
               >
-                {[
-                  {
-                    label: "Dépenses fonctionnement",
-                    value: formaterMontant(finances.depenses_fonctionnement),
-                    color: "var(--bleu-moyen)",
-                  },
-                  {
-                    label: "Investissements",
-                    value: formaterMontant(finances.depenses_investissement),
-                    color: "#0891B2",
-                  },
-                  {
-                    label: "Encours de dette",
-                    value: formaterMontant(finances.encours_dette),
-                    color: "var(--rouge-accent)",
-                  },
-                  {
-                    label: "Dépenses / habitant",
-                    value: `${finances.depenses_par_habitant?.toLocaleString("fr-FR")} €`,
-                    color: "#7C3AED",
-                  },
-                  {
-                    label: "Dette / habitant",
-                    value: `${finances.dette_par_habitant?.toLocaleString("fr-FR")} €`,
-                    color: "#D97706",
-                  },
-                ].map((item) => (
+                {indicateurs.map((item) => (
                   <div
                     key={item.label}
                     style={{
@@ -148,9 +128,8 @@ export default async function PageCommune({ params }: Props) {
                 ))}
               </div>
 
-              {/* === GRAPHIQUES === */}
               <h2 style={{ fontSize: "1.25rem", marginBottom: "1.5rem" }}>
-                Évolution sur 5 ans
+                {"Évolution sur 5 ans"}
               </h2>
               <CommuneCharts historique={historique} nomCommune={nom} />
             </div>
@@ -159,13 +138,13 @@ export default async function PageCommune({ params }: Props) {
           <section style={{ padding: "4rem 0", textAlign: "center" }}>
             <div className="container">
               <p style={{ color: "var(--texte-secondaire)", fontSize: "1rem" }}>
-                Les données financières de {nom} ne sont pas encore disponibles pour 2024.
+                {"Les données financières de " + nom + " ne sont pas encore disponibles pour 2024."}
               </p>
             </div>
           </section>
         )}
 
-        {/* === COMPARATEUR === */}
+        {/* COMPARATEUR */}
         <section
           style={{
             background: "var(--bleu-pale)",
@@ -174,12 +153,11 @@ export default async function PageCommune({ params }: Props) {
           }}
         >
           <div className="container">
-            <div className="divider" style={{ marginBottom: "1rem" }} />
             <h2 style={{ fontSize: "1.5rem", marginBottom: ".75rem" }}>
-              Comparer avec d&apos;autres communes
+              {"Comparer avec d'autres communes"}
             </h2>
             <p style={{ color: "var(--texte-secondaire)", marginBottom: "2rem", fontSize: ".9375rem" }}>
-              Ajoutez jusqu&apos;à 4 communes pour comparer leurs finances côte à côte.
+              {"Ajoutez jusqu'à 4 communes pour comparer leurs finances côte à côte."}
             </p>
             <Comparateur />
           </div>
@@ -197,7 +175,7 @@ export default async function PageCommune({ params }: Props) {
         }}
       >
         <div className="container">
-          © 2026 Budget Public — Données OFGL / DGFiP — Licence Ouverte v2.0
+          {"© 2026 Budget Public — Données OFGL / DGFiP — Licence Ouverte v2.0"}
         </div>
       </footer>
     </>
