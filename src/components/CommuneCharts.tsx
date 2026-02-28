@@ -1,5 +1,3 @@
-// src/components/CommuneCharts.tsx
-// Graphiques d'évolution financière d'une commune — Recharts
 "use client";
 
 import {
@@ -14,7 +12,6 @@ interface Props {
   nomCommune: string;
 }
 
-// Formateur axe Y : affiche en M€ si > 1000 k€
 const formatYAxis = (val: number) =>
   val >= 1000 ? `${(val / 1000).toFixed(0)}M€` : `${val}k€`;
 
@@ -36,7 +33,7 @@ export default function CommuneCharts({ historique, nomCommune }: Props) {
           border: "1px solid var(--bordure)",
         }}
       >
-        Données historiques non disponibles pour cette commune.
+        {"Données historiques non disponibles pour cette commune."}
       </div>
     );
   }
@@ -44,7 +41,7 @@ export default function CommuneCharts({ historique, nomCommune }: Props) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "2.5rem" }}>
 
-      {/* --- Graphique 1 : Évolution dépenses fonctionnement vs investissement --- */}
+      {/* Graphique 1 : Dépenses fonctionnement vs investissement */}
       <div
         style={{
           background: "var(--blanc)",
@@ -55,10 +52,10 @@ export default function CommuneCharts({ historique, nomCommune }: Props) {
         }}
       >
         <h3 style={{ fontSize: "1rem", marginBottom: ".375rem" }}>
-          Évolution des dépenses
+          {"Évolution des dépenses"}
         </h3>
         <p style={{ fontSize: ".8125rem", color: "var(--texte-secondaire)", marginBottom: "1.5rem" }}>
-          Fonctionnement et investissement — {nomCommune} (en k€)
+          {"Fonctionnement et investissement — " + nomCommune + " (en k€)"}
         </p>
         <ResponsiveContainer width="100%" height={260}>
           <AreaChart data={historique} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
@@ -76,8 +73,8 @@ export default function CommuneCharts({ historique, nomCommune }: Props) {
             <XAxis dataKey="annee" tick={{ fontSize: 12 }} />
             <YAxis tickFormatter={formatYAxis} tick={{ fontSize: 11 }} width={64} />
             <Tooltip
-              formatter={(val: number, name: string) => [
-                formatTooltip(val),
+              formatter={(val: number | undefined, name: string) => [
+                formatTooltip(val ?? 0),
                 name === "depenses_fonctionnement" ? "Fonctionnement" : "Investissement",
               ]}
               labelFormatter={(l) => `Année ${l}`}
@@ -105,7 +102,7 @@ export default function CommuneCharts({ historique, nomCommune }: Props) {
         </ResponsiveContainer>
       </div>
 
-      {/* --- Graphique 2 : Évolution de la dette --- */}
+      {/* Graphique 2 : Évolution de la dette */}
       <div
         style={{
           background: "var(--blanc)",
@@ -116,10 +113,10 @@ export default function CommuneCharts({ historique, nomCommune }: Props) {
         }}
       >
         <h3 style={{ fontSize: "1rem", marginBottom: ".375rem" }}>
-          Encours de dette
+          {"Encours de dette"}
         </h3>
         <p style={{ fontSize: ".8125rem", color: "var(--texte-secondaire)", marginBottom: "1.5rem" }}>
-          Évolution du stock de dette total — {nomCommune} (en k€)
+          {"Évolution du stock de dette total — " + nomCommune + " (en k€)"}
         </p>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={historique} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
@@ -127,7 +124,10 @@ export default function CommuneCharts({ historique, nomCommune }: Props) {
             <XAxis dataKey="annee" tick={{ fontSize: 12 }} />
             <YAxis tickFormatter={formatYAxis} tick={{ fontSize: 11 }} width={64} />
             <Tooltip
-              formatter={(val: number) => [formatTooltip(val), "Encours de dette"]}
+              formatter={(val: number | undefined) => [
+                formatTooltip(val ?? 0),
+                "Encours de dette",
+              ]}
               labelFormatter={(l) => `Année ${l}`}
             />
             <Bar dataKey="encours_dette" fill="#003189" radius={[4, 4, 0, 0]} />
@@ -136,7 +136,7 @@ export default function CommuneCharts({ historique, nomCommune }: Props) {
       </div>
 
       <p style={{ fontSize: ".75rem", color: "var(--texte-tertiaire)", textAlign: "right" }}>
-        Source : OFGL — données DGFiP. Montants en milliers d&apos;euros (k€).
+        {"Source : OFGL — données DGFiP. Montants en milliers d'euros (k€)."}
       </p>
     </div>
   );
