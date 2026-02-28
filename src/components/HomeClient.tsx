@@ -3,6 +3,7 @@
 import Header from '@/components/Header';
 import SearchBar from '@/components/SearchBar';
 import StatCard from '@/components/StatCard';
+import { ChiffresNationaux, formaterMontant } from '@/lib/api';
 
 const IconDette = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -27,48 +28,46 @@ const IconHabitant = () => (
   </svg>
 );
 
-const CHIFFRES_CLES = [
-  {
-    icon: <IconDette />,
-    value: '3 128 Md€',
-    label: 'Dette publique totale',
-    description: 'Ensemble des administrations publiques (État, collectivités, sécurité sociale)',
-    variation: '+3.2%',
-    variationDirection: 'up' as const,
-    source: 'INSEE, comptes nationaux 2023',
-    accentColor: 'var(--rouge-accent)',
-  },
-  {
-    icon: <IconFonctionnement />,
-    value: '1 245 Md€',
-    label: 'Dépenses de fonctionnement',
-    description: 'Charges courantes des collectivités locales (personnels, achats, services)',
-    variation: '+1.8%',
-    variationDirection: 'up' as const,
-    source: 'DGFiP, comptes locaux 2023',
-    accentColor: 'var(--bleu-moyen)',
-  },
-  {
-    icon: <IconInvestissement />,
-    value: '58.4 Md€',
-    label: 'Investissements des communes',
-    description: "Dépenses d'équipement : écoles, voirie, sports, culture…",
-    variation: '+4.1%',
-    variationDirection: 'up' as const,
-    source: 'DGFiP, comptes locaux 2023',
-    accentColor: '#0891B2',
-  },
-  {
-    icon: <IconHabitant />,
-    value: '2 312 €',
-    label: 'Dépenses par habitant',
-    description: 'Dépenses totales des communes rapportées à la population nationale',
-    variation: '+2.7%',
-    variationDirection: 'up' as const,
-    source: 'DGFiP / INSEE 2023',
-    accentColor: '#7C3AED',
-  },
-];
+function buildChiffresCles(data: ChiffresNationaux) {
+  return [
+    {
+      icon: <IconDette />,
+      value: `${data.dette_totale_communes} Md€`,
+      label: 'Dette des communes',
+      description: 'Encours de dette total des communes françaises',
+      variation: null,
+      source: `OFGL, données DGFiP ${data.annee}`,
+      accentColor: 'var(--rouge-accent)',
+    },
+    {
+      icon: <IconFonctionnement />,
+      value: formaterMontant(data.depenses_totales_communes * 1_000_000),
+      label: 'Dépenses totales communes',
+      description: 'Fonctionnement + investissement de toutes les communes',
+      variation: null,
+      source: `OFGL, données DGFiP ${data.annee}`,
+      accentColor: 'var(--bleu-moyen)',
+    },
+    {
+      icon: <IconInvestissement />,
+      value: `${data.investissements_communes} Md€`,
+      label: 'Investissements des communes',
+      description: "Dépenses d'équipement : écoles, voirie, sports, culture…",
+      variation: null,
+      source: `OFGL, données DGFiP ${data.annee}`,
+      accentColor: '#0891B2',
+    },
+    {
+      icon: <IconHabitant />,
+      value: `${data.depenses_par_habitant_moyen.toLocaleString('fr-FR')} €`,
+      label: 'Dépenses par habitant',
+      description: 'Moyenne nationale toutes communes confondues',
+      variation: null,
+      source: `OFGL / INSEE ${data.annee}`,
+      accentColor: '#7C3AED',
+    },
+  ];
+}
 
 const RAISONS = [
   {
@@ -121,7 +120,12 @@ const SOURCES = [
 
 const VILLES_RAPIDES = ['Paris', 'Marseille', 'Lyon', 'Bordeaux', 'Nantes'];
 
-export default function HomeClient() {
+export default function HomeClient({
+  chiffresNationaux,
+}: {
+  chiffresNationaux: ChiffresNationaux;
+}) {
+  const CHIFFRES_CLES = buildChiffresCles(chiffresNationaux);
   return (
     <>
       <Header />
