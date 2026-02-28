@@ -11,14 +11,15 @@ import CommuneCharts from "@/components/CommuneCharts";
 import Comparateur from "@/components/Comparateur";
 
 interface Props {
-  params: { code: string };
+  params: Promise<{ code: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { code } = await params;
   const nomRes = await fetch(
-    `https://geo.api.gouv.fr/communes/${params.code}?fields=nom`,
+    `https://geo.api.gouv.fr/communes/${code}?fields=nom`,
     { next: { revalidate: 86400 } }
-  ).then((r) => r.json()).catch(() => ({ nom: params.code }));
+  ).then((r) => r.json()).catch(() => ({ nom: code }));
 
   return {
     title: `Budget de ${nomRes.nom} — Budget Public`,
@@ -27,13 +28,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function PageCommune({ params }: Props) {
+  const { code } = await params;
+
   const [nomRes, finances, historique] = await Promise.all([
     fetch(
-      `https://geo.api.gouv.fr/communes/${params.code}?fields=nom,population,codeDepartement`,
+      `https://geo.api.gouv.fr/communes/${code}?fields=nom,population,codeDepartement`,
       { next: { revalidate: 86400 } }
     ).then((r) => r.json()).catch(() => null),
-    getFinancesCommune(params.code, 2024),
-    getHistoriqueCommune(params.code),
+    getFinancesCommune(code, 2024),
+    getHistoriqueCommune(code),
   ]);
 
   if (!nomRes) notFound();
@@ -66,8 +69,8 @@ export default async function PageCommune({ params }: Props) {
         >
           <div className="container">
             
-                        {(() => {
-            const styleLien: React.CSSProperties = {
+              href="/"
+              style={{
                 color: "rgba(255,255,255,.6)",
                 fontSize: ".875rem",
                 display: "inline-flex",
@@ -75,13 +78,10 @@ export default async function PageCommune({ params }: Props) {
                 gap: ".375rem",
                 marginBottom: "1.5rem",
                 textDecoration: "none",
-            };
-            return (
-                <a href="/" style={styleLien}>
-                {"← Retour à l'accueil"}
-                </a>
-            );
-            })()}
+              }}
+            >
+              {"← Retour à l'accueil"}
+            </a>
             <h1
               style={{
                 color: "white",
@@ -98,7 +98,7 @@ export default async function PageCommune({ params }: Props) {
           </div>
         </section>
 
-        {/* INDICATEURS + GRAPHIQUES */}
+        {/* INDICATEURS */}
         {finances ? (
           <section style={{ padding: "3rem 0" }}>
             <div className="container">
