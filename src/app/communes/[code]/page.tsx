@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import {
@@ -69,19 +70,9 @@ export default async function PageCommune({ params }: Props) {
         >
           <div className="container">
             
-              href="/"
-              style={{
-                color: "rgba(255,255,255,.6)",
-                fontSize: ".875rem",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: ".375rem",
-                marginBottom: "1.5rem",
-                textDecoration: "none",
-              }}
-            >
-              {"← Retour à l'accueil"}
-            </a>
+           <Link href="/" style={{ color: "rgba(255,255,255,.6)", fontSize: ".875rem", display: "inline-flex", alignItems: "center", gap: ".375rem", marginBottom: "1.5rem", textDecoration: "none" }}>
+  {"← Retour à l'accueil"}
+</Link>
             <h1
               style={{
                 color: "white",
