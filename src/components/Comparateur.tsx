@@ -1,5 +1,3 @@
-// src/components/Comparateur.tsx
-// Comparateur inter-communes — saisie de 2 à 4 communes à comparer
 "use client";
 
 import { useState } from "react";
@@ -20,6 +18,15 @@ interface CommuneData {
 
 const COULEURS = ["#003189", "#C1292E", "#0891B2", "#7C3AED"];
 
+// Formatter Recharts typé proprement pour éviter les erreurs TypeScript
+const tooltipFormatter = (
+  val: number | undefined,
+  name: string | undefined
+): [string, string] => [
+  `${(val ?? 0).toLocaleString("fr-FR")} €`,
+  name ?? "",
+];
+
 export default function Comparateur() {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<CommuneGeo[]>([]);
@@ -27,7 +34,6 @@ export default function Comparateur() {
   const [loading, setLoading] = useState(false);
   const [erreur, setErreur] = useState("");
 
-  // Recherche en temps réel
   const handleSearch = async (val: string) => {
     setQuery(val);
     if (val.length < 2) { setSuggestions([]); return; }
@@ -35,7 +41,6 @@ export default function Comparateur() {
     setSuggestions(res.slice(0, 6));
   };
 
-  // Ajouter une commune à la comparaison
   const ajouterCommune = async (commune: CommuneGeo) => {
     setQuery("");
     setSuggestions([]);
@@ -47,7 +52,7 @@ export default function Comparateur() {
     setLoading(true);
     const finances = await getFinancesCommune(commune.code, 2024);
     setLoading(false);
-    if (!finances) { setErreur(`Données non disponibles pour ${commune.nom}.`); return; }
+    if (!finances) { setErreur("Données non disponibles pour " + commune.nom + "."); return; }
     setCommunes((prev) => [
       ...prev,
       {
@@ -64,12 +69,10 @@ export default function Comparateur() {
   const retirerCommune = (code: string) =>
     setCommunes((prev) => prev.filter((c) => c.codeInsee !== code));
 
-  // Données pour les graphiques
-  const dataParHabitant = communes.map((c, i) => ({
+  const dataParHabitant = communes.map((c) => ({
     nom: c.nom,
     "Dépenses/hab": c.depenses_par_habitant,
     "Dette/hab": c.dette_par_habitant,
-    fill: COULEURS[i],
   }));
 
   return (
@@ -94,6 +97,7 @@ export default function Comparateur() {
             fontSize: "1rem",
             outline: "none",
             background: communes.length >= 4 ? "#f5f5f5" : "white",
+            boxSizing: "border-box",
           }}
         />
         {suggestions.length > 0 && (
@@ -133,7 +137,7 @@ export default function Comparateur() {
               >
                 <span>{s.nom}</span>
                 <span style={{ fontSize: ".8rem", color: "var(--texte-tertiaire)" }}>
-                  {s.codeDepartement} · {s.population?.toLocaleString("fr-FR")} hab.
+                  {s.codeDepartement + " · " + (s.population?.toLocaleString("fr-FR") ?? "") + " hab."}
                 </span>
               </li>
             ))}
@@ -177,7 +181,7 @@ export default function Comparateur() {
                   justifyContent: "center",
                 }}
               >
-                ×
+                {"×"}
               </button>
             </span>
           ))}
@@ -186,20 +190,21 @@ export default function Comparateur() {
 
       {loading && (
         <p style={{ color: "var(--texte-secondaire)", fontSize: ".9rem" }}>
-          Chargement des données…
-        </p>
-      )}
-      {erreur && (
-        <p style={{ color: "var(--rouge-accent)", fontSize: ".875rem", marginBottom: "1rem" }}>
-          ⚠️ {erreur}
+          {"Chargement des données…"}
         </p>
       )}
 
-      {/* Graphiques de comparaison */}
+      {erreur && (
+        <p style={{ color: "var(--rouge-accent)", fontSize: ".875rem", marginBottom: "1rem" }}>
+          {"⚠️ " + erreur}
+        </p>
+      )}
+
+      {/* Graphiques */}
       {communes.length >= 2 && (
         <div style={{ display: "flex", flexDirection: "column", gap: "2rem", marginTop: "1rem" }}>
 
-          {/* Graphique 1 : Dépenses et dette par habitant */}
+          {/* Graphique dépenses et dette par habitant */}
           <div
             style={{
               background: "var(--blanc)",
@@ -210,22 +215,17 @@ export default function Comparateur() {
             }}
           >
             <h3 style={{ fontSize: "1rem", marginBottom: ".375rem" }}>
-              Dépenses & dette par habitant (€/hab.)
+              {"Dépenses & dette par habitant (€/hab.)"}
             </h3>
             <p style={{ fontSize: ".8125rem", color: "var(--texte-secondaire)", marginBottom: "1.5rem" }}>
-              Comparaison normalisée par habitant — données 2024
+              {"Comparaison normalisée par habitant — données 2024"}
             </p>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={dataParHabitant} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,.06)" />
                 <XAxis dataKey="nom" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 11 }} unit="€" width={64} />
-                <Tooltip
-                  formatter={(val: number, name: string) => [
-                    `${val.toLocaleString("fr-FR")} €`,
-                    name,
-                  ]}
-                />
+                <Tooltip formatter={tooltipFormatter as never} />
                 <Legend />
                 <Bar dataKey="Dépenses/hab" fill="#003189" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="Dette/hab" fill="#C1292E" radius={[4, 4, 0, 0]} />
@@ -245,73 +245,71 @@ export default function Comparateur() {
             }}
           >
             <h3 style={{ fontSize: "1rem", marginBottom: "1.25rem" }}>
-              Tableau comparatif
+              {"Tableau comparatif"}
             </h3>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: ".875rem" }}>
               <thead>
                 <tr style={{ borderBottom: "2px solid var(--bordure)" }}>
-                  <th style={{ textAlign: "left", padding: ".625rem .75rem", color: "var(--texte-secondaire)", fontWeight: 600 }}>
-                    Commune
-                  </th>
-                  <th style={{ textAlign: "right", padding: ".625rem .75rem", color: "var(--texte-secondaire)", fontWeight: 600 }}>
-                    Dép. fonctionnement
-                  </th>
-                  <th style={{ textAlign: "right", padding: ".625rem .75rem", color: "var(--texte-secondaire)", fontWeight: 600 }}>
-                    Investissements
-                  </th>
-                  <th style={{ textAlign: "right", padding: ".625rem .75rem", color: "var(--texte-secondaire)", fontWeight: 600 }}>
-                    Dép./habitant
-                  </th>
-                  <th style={{ textAlign: "right", padding: ".625rem .75rem", color: "var(--texte-secondaire)", fontWeight: 600 }}>
-                    Dette/habitant
-                  </th>
+                  {["Commune", "Dép. fonctionnement", "Investissements", "Dép./habitant", "Dette/habitant"].map((col) => (
+                    <th
+                      key={col}
+                      style={{
+                        textAlign: col === "Commune" ? "left" : "right",
+                        padding: ".625rem .75rem",
+                        color: "var(--texte-secondaire)",
+                        fontWeight: 600,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {col}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {communes.map((c, i) => (
-                  <tr
-                    key={c.codeInsee}
-                    style={{ borderBottom: "1px solid var(--bordure)" }}
-                  >
-                    <td style={{ padding: ".75rem", fontWeight: 600, display: "flex", alignItems: "center", gap: ".5rem" }}>
-                      <span
-                        style={{
-                          width: 10,
-                          height: 10,
-                          borderRadius: "50%",
-                          background: COULEURS[i],
-                          display: "inline-block",
-                          flexShrink: 0,
-                        }}
-                      />
-                      {c.nom}
+                  <tr key={c.codeInsee} style={{ borderBottom: "1px solid var(--bordure)" }}>
+                    <td style={{ padding: ".75rem", fontWeight: 600 }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: ".5rem" }}>
+                        <span
+                          style={{
+                            width: 10,
+                            height: 10,
+                            borderRadius: "50%",
+                            background: COULEURS[i],
+                            display: "inline-block",
+                            flexShrink: 0,
+                          }}
+                        />
+                        {c.nom}
+                      </span>
                     </td>
                     <td style={{ textAlign: "right", padding: ".75rem" }}>
-                      {c.depenses_fonctionnement.toLocaleString("fr-FR")} k€
+                      {c.depenses_fonctionnement.toLocaleString("fr-FR") + " k€"}
                     </td>
                     <td style={{ textAlign: "right", padding: ".75rem" }}>
-                      {c.depenses_investissement.toLocaleString("fr-FR")} k€
+                      {c.depenses_investissement.toLocaleString("fr-FR") + " k€"}
                     </td>
                     <td style={{ textAlign: "right", padding: ".75rem", fontWeight: 600, color: "var(--bleu-marine)" }}>
-                      {c.depenses_par_habitant.toLocaleString("fr-FR")} €
+                      {c.depenses_par_habitant.toLocaleString("fr-FR") + " €"}
                     </td>
                     <td style={{ textAlign: "right", padding: ".75rem", fontWeight: 600, color: "var(--rouge-accent)" }}>
-                      {c.dette_par_habitant.toLocaleString("fr-FR")} €
+                      {c.dette_par_habitant.toLocaleString("fr-FR") + " €"}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
             <p style={{ fontSize: ".75rem", color: "var(--texte-tertiaire)", marginTop: "1rem", textAlign: "right" }}>
-              Source : OFGL — données DGFiP 2024
+              {"Source : OFGL — données DGFiP 2024"}
             </p>
           </div>
         </div>
       )}
 
-      {communes.length < 2 && communes.length > 0 && (
+      {communes.length === 1 && (
         <p style={{ color: "var(--texte-secondaire)", fontSize: ".9rem", textAlign: "center", padding: "2rem" }}>
-          Ajoutez au moins une deuxième commune pour voir la comparaison.
+          {"Ajoutez au moins une deuxième commune pour voir la comparaison."}
         </p>
       )}
     </div>
