@@ -285,7 +285,7 @@ export default function HomeClient({
                   fontWeight: 500,
                 }}
               >
-                ⚠️ Données indicatives — intégration API DGFiP en cours
+                ✓ Données officielles OFGL — dernière année disponible
               </div>
             </div>
 

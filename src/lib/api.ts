@@ -55,37 +55,53 @@ export async function getFinancesCommune(
   codeInsee: string,
   annee: number = 2024
 ): Promise<FinancesCommune | null> {
-  const url =
-    `https://data.ofgl.fr/api/explore/v2.1/catalog/datasets/ofgl-base-communes/records` +
-    `?where=insee_commune%3D%22${codeInsee}%22%20and%20exer%3D${annee}` +
-    `&limit=1`;
+  // Essaie les années en cascade de la plus récente à la plus ancienne
+  const anneesAEssayer = [annee, 2023, 2022, 2021];
 
-  const res = await fetch(url, { next: { revalidate: 3600 } });
-  if (!res.ok) return null;
+  for (const a of anneesAEssayer) {
+    const url =
+      `https://data.ofgl.fr/api/explore/v2.1/catalog/datasets/ofgl-base-communes/records` +
+      `?where=insee_commune%3D%22${codeInsee}%22%20and%20exer%3D${a}` +
+      `&limit=1`;
 
-  const data = await res.json();
-  if (!data.results || data.results.length === 0) return null;
+    try {
+      const res = await fetch(url, { next: { revalidate: 3600 } });
+      if (!res.ok) continue;
 
-  const r = data.results[0];
+      const data = await res.json();
+      if (!data.results || data.results.length === 0) continue;
 
-  const finances: FinancesCommune = {
-    annee,
-    depenses_fonctionnement:  r.dep_fonct_brut   ?? 0,
-    recettes_fonctionnement:  r.rec_fonct_brut   ?? 0,
-    depenses_investissement:  r.dep_invest_brut  ?? 0,
-    recettes_investissement:  r.rec_invest_brut  ?? 0,
-    encours_dette:            r.encours_dette    ?? 0,
-    capacite_autofinancement: r.caf_brute        ?? 0,
-    population:               r.ptot             ?? 1,
-  };
+      const r = data.results[0];
 
-  const pop = finances.population || 1;
-  finances.depenses_par_habitant = Math.round(
-    (finances.depenses_fonctionnement + finances.depenses_investissement) / pop * 1000
-  );
-  finances.dette_par_habitant = Math.round(finances.encours_dette / pop * 1000);
+      // Vérifie que les données ne sont pas toutes à zéro
+      if (!r.dep_fonct_brut && !r.encours_dette) continue;
 
-  return finances;
+      const finances: FinancesCommune = {
+        annee: a,
+        depenses_fonctionnement:  r.dep_fonct_brut   ?? 0,
+        recettes_fonctionnement:  r.rec_fonct_brut   ?? 0,
+        depenses_investissement:  r.dep_invest_brut  ?? 0,
+        recettes_investissement:  r.rec_invest_brut  ?? 0,
+        encours_dette:            r.encours_dette    ?? 0,
+        capacite_autofinancement: r.caf_brute        ?? 0,
+        population:               r.ptot             ?? 1,
+      };
+
+      const pop = finances.population || 1;
+      finances.depenses_par_habitant = Math.round(
+        (finances.depenses_fonctionnement + finances.depenses_investissement) / pop * 1000
+      );
+      finances.dette_par_habitant = Math.round(
+        finances.encours_dette / pop * 1000
+      );
+
+      return finances;
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
 }
 
 // --- 3. Chiffres nationaux -----------------------------------

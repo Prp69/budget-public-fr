@@ -84,7 +84,7 @@ export default async function PageCommune({ params }: Props) {
               {nom}
             </h1>
             <p style={{ color: "rgba(255,255,255,.65)", fontSize: "1rem" }}>
-              {"Département " + departement + " · " + population.toLocaleString("fr-FR") + " habitants · Données 2024 (OFGL / DGFiP)"}
+              {"Département " + departement + " · " + population.toLocaleString("fr-FR") + " habitants · Données " + (finances?.annee ?? "N/A") + " (OFGL / DGFiP)"}
             </p>
           </div>
         </section>
