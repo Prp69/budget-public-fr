@@ -69,7 +69,7 @@ export default async function PageCommune({ params }: Props) {
                 textDecoration: "none",
               }}
             >
-              ← Retour à l&apos;accueil
+              &larr; Retour à l&apos;accueil
             </a>
             <h1
               style={{
