@@ -140,4 +140,67 @@ export function formaterMontant(valeurMilliers: number): string {
     return `${(valeurMilliers / 1_000).toFixed(1)} M€`;
   }
   return `${valeurMilliers.toLocaleString('fr-FR')} k€`;
+
+  export interface HistoriqueCommune {
+  annee: number;
+  depenses_fonctionnement: number;
+  depenses_investissement: number;
+  encours_dette: number;
+  recettes_fonctionnement: number;
+}
+
+export async function getHistoriqueCommune(
+  codeInsee: string
+): Promise<HistoriqueCommune[]> {
+  // Récupère les données 2019-2024 pour tracer les graphiques d'évolution
+  const annees = [2019, 2020, 2021, 2022, 2023, 2024];
+  const url =
+    `https://data.ofgl.fr/api/explore/v2.1/catalog/datasets/ofgl-base-communes/records` +
+    `?where=insee_commune%3D%22${codeInsee}%22` +
+    `&select=exer%2Cdep_fonct_brut%2Cdep_invest_brut%2Cencours_dette%2Crec_fonct_brut` +
+    `&order_by=exer%20asc` +
+    `&limit=10`;
+
+  try {
+    const res = await fetch(url, { next: { revalidate: 3600 } });
+    if (!res.ok) return [];
+    const data = await res.json();
+
+    return (data.results ?? [])
+      .filter((r: Record<string, number>) => annees.includes(r.exer))
+      .map((r: Record<string, number>) => ({
+        annee: r.exer,
+        depenses_fonctionnement: Math.round((r.dep_fonct_brut ?? 0) / 1000), // → k€
+        depenses_investissement: Math.round((r.dep_invest_brut ?? 0) / 1000),
+        encours_dette: Math.round((r.encours_dette ?? 0) / 1000),
+        recettes_fonctionnement: Math.round((r.rec_fonct_brut ?? 0) / 1000),
+      }));
+  } catch {
+    return [];
+  }
+}
+
+// --- 5. Données de plusieurs communes pour comparateur -------
+
+export async function getFinancesPlusieursCommunes(
+  codesInsee: string[]
+): Promise<(FinancesCommune & { nom: string; codeInsee: string })[]> {
+  const resultats = await Promise.all(
+    codesInsee.map(async (code) => {
+      const [finances, geoResults] = await Promise.all([
+        getFinancesCommune(code, 2024),
+        rechercherCommunes(code).catch(() => []),
+      ]);
+      if (!finances) return null;
+      // Trouver le nom via l'API geo en cherchant par code INSEE exact
+      const nomRes = await fetch(
+        `https://geo.api.gouv.fr/communes/${code}?fields=nom`,
+        { next: { revalidate: 86400 } }
+      ).then((r) => r.json()).catch(() => ({ nom: code }));
+
+      return { ...finances, nom: nomRes.nom ?? code, codeInsee: code };
+    })
+  );
+  return resultats.filter(Boolean) as (FinancesCommune & { nom: string; codeInsee: string })[];
+}
 }
