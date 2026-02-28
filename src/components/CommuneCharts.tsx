@@ -20,6 +20,22 @@ const formatTooltip = (val: number) =>
     ? `${(val / 1000).toFixed(2)} M€`
     : `${val.toLocaleString("fr-FR")} k€`;
 
+// Type explicite pour le formatter Recharts — évite tous les conflits TypeScript
+type TooltipFormatter = (
+  value: number | undefined,
+  name: string | undefined
+) => [string, string];
+
+const formatterDepenses: TooltipFormatter = (val, name) => [
+  formatTooltip(val ?? 0),
+  name === "depenses_fonctionnement" ? "Fonctionnement" : "Investissement",
+];
+
+const formatterDette: TooltipFormatter = (val) => [
+  formatTooltip(val ?? 0),
+  "Encours de dette",
+];
+
 export default function CommuneCharts({ historique, nomCommune }: Props) {
   if (!historique.length) {
     return (
@@ -54,11 +70,20 @@ export default function CommuneCharts({ historique, nomCommune }: Props) {
         <h3 style={{ fontSize: "1rem", marginBottom: ".375rem" }}>
           {"Évolution des dépenses"}
         </h3>
-        <p style={{ fontSize: ".8125rem", color: "var(--texte-secondaire)", marginBottom: "1.5rem" }}>
+        <p
+          style={{
+            fontSize: ".8125rem",
+            color: "var(--texte-secondaire)",
+            marginBottom: "1.5rem",
+          }}
+        >
           {"Fonctionnement et investissement — " + nomCommune + " (en k€)"}
         </p>
         <ResponsiveContainer width="100%" height={260}>
-          <AreaChart data={historique} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
+          <AreaChart
+            data={historique}
+            margin={{ top: 4, right: 16, left: 0, bottom: 0 }}
+          >
             <defs>
               <linearGradient id="gradFonct" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#1E4E8C" stopOpacity={0.15} />
@@ -71,17 +96,20 @@ export default function CommuneCharts({ historique, nomCommune }: Props) {
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,.06)" />
             <XAxis dataKey="annee" tick={{ fontSize: 12 }} />
-            <YAxis tickFormatter={formatYAxis} tick={{ fontSize: 11 }} width={64} />
+            <YAxis
+              tickFormatter={formatYAxis}
+              tick={{ fontSize: 11 }}
+              width={64}
+            />
             <Tooltip
-              formatter={(val: number | undefined, name: string) => [
-                formatTooltip(val ?? 0),
-                name === "depenses_fonctionnement" ? "Fonctionnement" : "Investissement",
-              ]}
-              labelFormatter={(l) => `Année ${l}`}
+              formatter={formatterDepenses as never}
+              labelFormatter={(l) => "Année " + l}
             />
             <Legend
               formatter={(val) =>
-                val === "depenses_fonctionnement" ? "Fonctionnement" : "Investissement"
+                val === "depenses_fonctionnement"
+                  ? "Fonctionnement"
+                  : "Investissement"
               }
             />
             <Area
@@ -115,27 +143,47 @@ export default function CommuneCharts({ historique, nomCommune }: Props) {
         <h3 style={{ fontSize: "1rem", marginBottom: ".375rem" }}>
           {"Encours de dette"}
         </h3>
-        <p style={{ fontSize: ".8125rem", color: "var(--texte-secondaire)", marginBottom: "1.5rem" }}>
+        <p
+          style={{
+            fontSize: ".8125rem",
+            color: "var(--texte-secondaire)",
+            marginBottom: "1.5rem",
+          }}
+        >
           {"Évolution du stock de dette total — " + nomCommune + " (en k€)"}
         </p>
         <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={historique} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
+          <BarChart
+            data={historique}
+            margin={{ top: 4, right: 16, left: 0, bottom: 0 }}
+          >
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,.06)" />
             <XAxis dataKey="annee" tick={{ fontSize: 12 }} />
-            <YAxis tickFormatter={formatYAxis} tick={{ fontSize: 11 }} width={64} />
-            <Tooltip
-              formatter={(val: number | undefined) => [
-                formatTooltip(val ?? 0),
-                "Encours de dette",
-              ]}
-              labelFormatter={(l) => `Année ${l}`}
+            <YAxis
+              tickFormatter={formatYAxis}
+              tick={{ fontSize: 11 }}
+              width={64}
             />
-            <Bar dataKey="encours_dette" fill="#003189" radius={[4, 4, 0, 0]} />
+            <Tooltip
+              formatter={formatterDette as never}
+              labelFormatter={(l) => "Année " + l}
+            />
+            <Bar
+              dataKey="encours_dette"
+              fill="#003189"
+              radius={[4, 4, 0, 0]}
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
-      <p style={{ fontSize: ".75rem", color: "var(--texte-tertiaire)", textAlign: "right" }}>
+      <p
+        style={{
+          fontSize: ".75rem",
+          color: "var(--texte-tertiaire)",
+          textAlign: "right",
+        }}
+      >
         {"Source : OFGL — données DGFiP. Montants en milliers d'euros (k€)."}
       </p>
     </div>
