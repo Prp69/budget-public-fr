@@ -49,6 +49,19 @@ export async function rechercherCommunes(nom: string): Promise<CommuneGeo[]> {
   return res.json();
 }
 
+export async function rechercherCommunesParCodePostal(
+  codePostal: string
+): Promise<CommuneGeo[]> {
+  const url = `https://geo.api.gouv.fr/communes?codePostal=${codePostal}&fields=nom,code,population,codeDepartement,codeRegion&boost=population&limit=8`;
+  try {
+    const res = await fetch(url, { next: { revalidate: 86400 } });
+    if (!res.ok) return [];
+    return res.json();
+  } catch {
+    return [];
+  }
+}
+
 // --- 2. Finances d'une commune (OFGL) ------------------------
 
 export async function getFinancesCommune(

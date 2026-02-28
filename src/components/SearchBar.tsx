@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { rechercherCommunes, type CommuneGeo } from "@/lib/api";
+import { rechercherCommunes, rechercherCommunesParCodePostal, type CommuneGeo } from "@/lib/api";
 
 interface Props {
   size?: "hero" | "normal";
@@ -34,7 +34,10 @@ export default function SearchBar({ size = "normal", placeholder = "Rechercher u
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await rechercherCommunes(query);
+        const estCodePostal = /^\d{4,5}$/.test(query.trim());
+        const res = estCodePostal
+          ? await rechercherCommunesParCodePostal(query.trim())
+          : await rechercherCommunes(query);
         setSuggestions(res);
         setOuvert(res.length > 0);
       } catch {
