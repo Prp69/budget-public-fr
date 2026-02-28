@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Header() {
   // Ombre sur le header dès que l'utilisateur scroll
@@ -64,7 +65,7 @@ export default function Header() {
             height: '64px',
           }}
         >
-          {/* Logo */}
+          {/* Logo */} <ThemeToggle />
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '.75rem', textDecoration: 'none' }}>
             {/* Icône carrée stylisée */}
             <div

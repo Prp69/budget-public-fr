@@ -2,6 +2,25 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
+<script
+  dangerouslySetInnerHTML={{
+    __html: `
+      (function() {
+        try {
+          var saved = localStorage.getItem('budget-theme');
+          if (saved === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+          } else if (saved === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+          } else if (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+          }
+        } catch(e) {}
+      })();
+    `,
+  }}
+/>
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],

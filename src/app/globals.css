@@ -190,3 +190,69 @@ a:hover { color: var(--bleu-marine); }
   background: var(--rouge-accent);
   border-radius: 2px;
 }
+
+/* ============================================================
+   MODE SOMBRE — variables et overrides
+   ============================================================ */
+
+/* Détection automatique préférence système */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --blanc:            #0F1117;
+    --bleu-pale:        #161B27;
+    --texte-primaire:   #F0F4FF;
+    --texte-secondaire: #9BAACB;
+    --texte-tertiaire:  #5A6A8A;
+    --bordure:          rgba(255,255,255,.08);
+    --ombre-xs:         0 1px 4px rgba(0,0,0,.4);
+    --bg-input:         #1A2035;
+  }
+}
+
+/* Mode sombre forcé via bouton */
+:root[data-theme="dark"] {
+  --blanc:            #0F1117;
+  --bleu-pale:        #161B27;
+  --texte-primaire:   #F0F4FF;
+  --texte-secondaire: #9BAACB;
+  --texte-tertiaire:  #5A6A8A;
+  --bordure:          rgba(255,255,255,.08);
+  --ombre-xs:         0 1px 4px rgba(0,0,0,.4);
+  --bg-input:         #1A2035;
+}
+
+/* Mode clair forcé via bouton */
+:root[data-theme="light"] {
+  --blanc:            #FFFFFF;
+  --bleu-pale:        #F0F4FF;
+  --texte-primaire:   #0D1B3E;
+  --texte-secondaire: #4A5568;
+  --texte-tertiaire:  #9BAACB;
+  --bordure:          rgba(0,49,137,.1);
+  --ombre-xs:         0 1px 4px rgba(0,0,0,.06);
+  --bg-input:         #FFFFFF;
+}
+
+/* Transitions douces au changement de thème */
+*, *::before, *::after {
+  transition: background-color .25s ease, border-color .25s ease, color .15s ease;
+}
+
+/* Inputs en mode sombre */
+:root[data-theme="dark"] input,
+:root:not([data-theme="light"]) input {
+  background: var(--bg-input) !important;
+  color: var(--texte-primaire) !important;
+  border-color: var(--bordure) !important;
+}
+
+/* Cards et surfaces en mode sombre */
+:root[data-theme="dark"] .recharts-cartesian-grid line,
+:root:not([data-theme="light"]) .recharts-cartesian-grid line {
+  stroke: rgba(255,255,255,.06) !important;
+}
+
+:root[data-theme="dark"] .recharts-text,
+:root:not([data-theme="light"]) .recharts-text {
+  fill: var(--texte-secondaire) !important;
+}
