@@ -75,7 +75,7 @@ export default async function PageCommune({ params }: Props) {
                 marginBottom: "1.5rem",
                 textDecoration: "none",
               }}
-            >
+            {'>'}`
               {"← Retour à l'accueil"}
             </a>
             <h1
