@@ -1,0 +1,192 @@
+/* ============================================================
+   Budget Public — Styles globaux
+   Police : DM Sans (modernisée) + Marianne fallback
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
+
+/* --- Variables CSS ---------------------------------------- */
+:root {
+  /* Couleurs principales */
+  --bleu-marine:    #003189;
+  --bleu-moyen:     #1E4E8C;
+  --bleu-clair:     #E8EEF8;
+  --bleu-pale:      #F0F4FC;
+  --rouge-accent:   #C1292E;
+  --rouge-pale:     #FDF0F0;
+
+  /* Fond & texte */
+  --fond:           #F8F9FB;
+  --blanc:          #FFFFFF;
+  --texte-primaire: #111827;
+  --texte-secondaire: #4B5563;
+  --texte-tertiaire:  #9CA3AF;
+
+  /* Bordures */
+  --bordure:        #E5E7EB;
+  --bordure-forte:  #D1D5DB;
+
+  /* Ombres */
+  --ombre-xs: 0 1px 2px rgba(0,0,0,.05);
+  --ombre-sm: 0 2px 8px rgba(0,49,137,.07);
+  --ombre-md: 0 4px 20px rgba(0,49,137,.10);
+  --ombre-lg: 0 8px 40px rgba(0,49,137,.12);
+
+  /* Typographie */
+  --font-sans: 'DM Sans', 'Marianne', 'Inter', system-ui, sans-serif;
+  --font-mono: 'DM Mono', 'Courier New', monospace;
+
+  /* Rayons */
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   16px;
+  --radius-xl:   24px;
+
+  /* Transitions */
+  --transition: 200ms cubic-bezier(.4,0,.2,1);
+}
+
+/* --- Reset de base ---------------------------------------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--fond);
+  color: var(--texte-primaire);
+  line-height: 1.6;
+  min-height: 100dvh;
+}
+
+/* --- Typographie globale ---------------------------------- */
+h1, h2, h3, h4, h5, h6 {
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+p { line-height: 1.7; }
+
+a {
+  color: var(--bleu-moyen);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+a:hover { color: var(--bleu-marine); }
+
+/* --- Sélection de texte ----------------------------------- */
+::selection {
+  background-color: var(--bleu-clair);
+  color: var(--bleu-marine);
+}
+
+/* --- Barre de défilement ---------------------------------- */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--fond); }
+::-webkit-scrollbar-thumb {
+  background: var(--bleu-clair);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--bleu-moyen); }
+
+/* --- Focus accessible ------------------------------------- */
+:focus-visible {
+  outline: 2px solid var(--bleu-moyen);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+/* --- Animations globales ---------------------------------- */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .6; }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp .5s ease both;
+}
+.animate-fade-in {
+  animation: fadeIn .4s ease both;
+}
+
+/* Délais d'animation en cascade */
+.delay-1 { animation-delay: .1s; }
+.delay-2 { animation-delay: .2s; }
+.delay-3 { animation-delay: .3s; }
+.delay-4 { animation-delay: .4s; }
+
+/* --- Utilitaires de mise en page -------------------------- */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .container { padding-inline: 2.5rem; }
+}
+
+/* --- Boutons globaux -------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .75rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: .9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all var(--transition);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--bleu-marine);
+  color: var(--blanc);
+}
+.btn-primary:hover {
+  background: var(--bleu-moyen);
+  color: var(--blanc);
+  transform: translateY(-1px);
+  box-shadow: var(--ombre-md);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--bleu-marine);
+  border: 2px solid var(--bleu-marine);
+}
+.btn-outline:hover {
+  background: var(--bleu-pale);
+  color: var(--bleu-marine);
+}
+
+/* --- Divider ---------------------------------------------- */
+.divider {
+  width: 48px;
+  height: 4px;
+  background: var(--rouge-accent);
+  border-radius: 2px;
+}
