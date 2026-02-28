@@ -66,8 +66,8 @@ export default async function PageCommune({ params }: Props) {
         >
           <div className="container">
             
-              href="/"
-              style={{
+                        {(() => {
+            const styleLien: React.CSSProperties = {
                 color: "rgba(255,255,255,.6)",
                 fontSize: ".875rem",
                 display: "inline-flex",
@@ -75,10 +75,13 @@ export default async function PageCommune({ params }: Props) {
                 gap: ".375rem",
                 marginBottom: "1.5rem",
                 textDecoration: "none",
-              }}
-            {'>'}`
-              {"← Retour à l'accueil"}
-            </a>
+            };
+            return (
+                <a href="/" style={styleLien}>
+                {"← Retour à l'accueil"}
+                </a>
+            );
+            })()}
             <h1
               style={{
                 color: "white",
