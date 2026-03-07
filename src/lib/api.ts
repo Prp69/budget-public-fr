@@ -79,37 +79,47 @@ async function fetchAgregatsCommune(
   comCode: string,
   annee: number
 ): Promise<Record<string, number>> {
-  // On demande tous les agrégats connus en une seule requête
   const nomsAgregats = Object.values(AGREGATS);
   const whereAgregats = nomsAgregats
     .map((a) => `agregat="${a}"`)
     .join(" OR ");
 
-  const params = new URLSearchParams({
-    where:  `com_code="${comCode}" AND exer="${annee}" AND (${whereAgregats})`,
-    select: "agregat,mtm",
-    limit:  "20",
-  });
+  // On essaie d'abord exer comme nombre, puis comme string si rien
+  for (const exerVal of [String(annee), annee]) {
+    const params = new URLSearchParams({
+      where:  `com_code="${comCode}" AND exer=${exerVal} AND (${whereAgregats})`,
+      select: "agregat,mtm",
+      limit:  "20",
+    });
 
-  const url = `${OFGL_BASE}/${DATASET}/records?${params}`;
+    const url = `${OFGL_BASE}/${DATASET}/records?${params}`;
 
-  const res = await fetch(url, {
-    next: { revalidate: 3600 },
-    headers: { Accept: "application/json" },
-  });
+    try {
+      const res = await fetch(url, {
+        next: { revalidate: 3600 },
+        headers: { Accept: "application/json" },
+      });
 
-  if (!res.ok) return {};
+      if (!res.ok) continue;
 
-  const data = await res.json();
-  const records: Array<{ agregat: string; mtm: number }> = data?.results ?? [];
+      const data = await res.json();
+      const records: Array<{ agregat: string; mtm: number }> = data?.results ?? [];
 
-  const map: Record<string, number> = {};
-  for (const r of records) {
-    if (r.agregat && r.mtm !== undefined) {
-      map[r.agregat] = mtmVersEuros(r.mtm);
+      if (records.length === 0) continue;
+
+      const map: Record<string, number> = {};
+      for (const r of records) {
+        if (r.agregat && r.mtm !== undefined && r.mtm !== null) {
+          map[r.agregat] = mtmVersEuros(r.mtm);
+        }
+      }
+      if (Object.keys(map).length > 0) return map;
+    } catch {
+      continue;
     }
   }
-  return map;
+
+  return {};
 }
 
 // ─── API publiques ────────────────────────────────────────────────────────────

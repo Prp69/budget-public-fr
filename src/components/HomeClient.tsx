@@ -3,9 +3,10 @@
 // src/components/HomeClient.tsx
 import { useState } from "react";
 import Link from "next/link";
+import Header from "@/components/Header";
 import SearchBar from "@/components/SearchBar";
-import { ChiffresNationaux, formaterMontant } from "@/lib/api";
 import StatCard from "@/components/StatCard";
+import { ChiffresNationaux, formaterMontant } from "@/lib/api";
 
 // ─── Icônes ───────────────────────────────────────────────────────────────────
 
@@ -75,6 +76,7 @@ export default function HomeClient({ chiffres }: Props) {
 
   return (
     <>
+      <Header />
       {/* ── HERO ─────────────────────────────────────────────────────────── */}
       <section style={{
         background: "linear-gradient(135deg, var(--bleu-marine) 0%, var(--bleu-moyen) 100%)",
