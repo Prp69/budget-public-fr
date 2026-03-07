@@ -48,18 +48,19 @@ const COULEURS_PIE = ["#1E4E8C", "#0891B2", "#C1292E", "#059669", "#F59E0B", "#8
 interface PieEntry { name: string; value: number; color: string; }
 
 function buildDepensesNature(f: FinancesCommune): PieEntry[] {
-  const entries: Array<[string, number]> = [
-    ["Frais de personnel",       f.frais_personnel       ?? 0],
-    ["Achats et charges ext.",   f.achats_charges        ?? 0],
-    ["Intervention sociale",     f.depenses_intervention ?? 0],
-    ["Investissements",          f.depenses_investissement],
-    ["Charges financières",      Math.max(0, f.depenses_fonctionnement
+  const rawEntries: Array<[string, number]> = [
+    ["Frais de personnel",     f.frais_personnel       ?? 0],
+    ["Achats et charges ext.", f.achats_charges        ?? 0],
+    ["Intervention sociale",   f.depenses_intervention ?? 0],
+    ["Investissements",        f.depenses_investissement],
+    ["Charges financières",    Math.max(0, f.depenses_fonctionnement
       - (f.frais_personnel ?? 0)
       - (f.achats_charges ?? 0)
       - (f.depenses_intervention ?? 0)
       - f.depenses_investissement
     )],
-  ].filter(([, v]) => v > 0) as Array<[string, number]>;
+  ];
+  const entries: Array<[string, number]> = rawEntries.filter(([, v]) => v > 0);
 
   return entries.map(([name, value], i) => ({
     name,
