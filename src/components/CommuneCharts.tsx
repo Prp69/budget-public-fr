@@ -69,17 +69,13 @@ function buildDepensesNature(f: FinancesCommune): PieEntry[] {
   }));
 }
 
-const renderCustomLabel = ({
-  cx, cy, midAngle, innerRadius, outerRadius, percent,
-}: {
-  cx: number; cy: number; midAngle: number;
-  innerRadius: number; outerRadius: number; percent: number;
-}) => {
-  if (percent < 0.05) return null;
+const renderCustomLabel = (props: Record<string, number>) => {
+  const { cx, cy, midAngle, innerRadius, outerRadius, percent } = props;
+  if (!percent || percent < 0.05) return null;
   const RADIAN = Math.PI / 180;
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  const radius = (innerRadius ?? 0) + ((outerRadius ?? 0) - (innerRadius ?? 0)) * 0.5;
+  const x = (cx ?? 0) + radius * Math.cos(-(midAngle ?? 0) * RADIAN);
+  const y = (cy ?? 0) + radius * Math.sin(-(midAngle ?? 0) * RADIAN);
   return (
     <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central"
       fontSize={11} fontWeight={600}>
