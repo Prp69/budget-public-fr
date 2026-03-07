@@ -1,66 +1,144 @@
-"use client";
+// src/app/comprendre/page.tsx — Server Component
 
-// src/components/CommunesClient.tsx
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { Metadata } from "next";
 import Link from "next/link";
 import Header from "@/components/Header";
-import { rechercherCommunes, rechercherCommunesParCodePostal, type CommuneGeo } from "@/lib/api";
 
-const COMMUNES_VEDETTES = [
-  { nom: "Paris",     code: "75056", dep: "75", pop: "2 133 111" },
-  { nom: "Marseille", code: "13055", dep: "13", pop: "861 635"   },
-  { nom: "Lyon",      code: "69123", dep: "69", pop: "513 275"   },
-  { nom: "Toulouse",  code: "31555", dep: "31", pop: "471 941"   },
-  { nom: "Nice",      code: "06088", dep: "06", pop: "342 522"   },
-  { nom: "Nantes",    code: "44109", dep: "44", pop: "320 732"   },
-  { nom: "Bordeaux",  code: "33063", dep: "33", pop: "254 436"   },
-  { nom: "Strasbourg",code: "67482", dep: "67", pop: "284 677"   },
+export const metadata: Metadata = {
+  title: "Comprendre le budget communal — Budget Public",
+  description: "Guide pédagogique pour comprendre les finances de votre commune : dépenses, recettes, dette, investissements.",
+};
+
+const SECTIONS = [
+  {
+    id: "structure",
+    emoji: "🏛️",
+    titre: "La structure du budget communal",
+    contenu: [
+      {
+        sous_titre: "Deux grandes sections",
+        texte: "Le budget d'une commune est divisé en deux sections distinctes : la section de fonctionnement et la section d'investissement. Ces deux sections obéissent à des règles comptables différentes et financent des natures de dépenses très différentes.",
+      },
+      {
+        sous_titre: "La section de fonctionnement",
+        texte: "Elle couvre toutes les dépenses courantes nécessaires au fonctionnement quotidien de la commune : salaires des agents municipaux, achats de fournitures, entretien des bâtiments, remboursement des intérêts de la dette, versements aux associations. Les recettes de fonctionnement proviennent principalement des impôts locaux et des dotations de l'État.",
+      },
+      {
+        sous_titre: "La section d'investissement",
+        texte: "Elle finance les projets durables : construction d'écoles, rénovation de routes, équipements sportifs et culturels. Ces dépenses sont financées par l'épargne dégagée du fonctionnement, les emprunts bancaires, et les subventions de l'État ou de la région.",
+      },
+    ],
+  },
+  {
+    id: "recettes",
+    emoji: "💰",
+    titre: "Les recettes : d'où vient l'argent ?",
+    contenu: [
+      {
+        sous_titre: "Les impôts locaux",
+        texte: "La taxe foncière sur les propriétés bâties est le principal impôt local. Elle est payée par les propriétaires (occupants ou bailleurs). La commune fixe un taux appliqué sur la valeur cadastrale du bien, déterminée par l'État.",
+      },
+      {
+        sous_titre: "Les dotations de l'État",
+        texte: "La Dotation Globale de Fonctionnement (DGF) est versée par l'État à chaque commune. Son montant dépend de la population, du potentiel fiscal et de l'effort fiscal de la commune. Elle représente souvent 15 à 25% des recettes de fonctionnement.",
+      },
+      {
+        sous_titre: "Les autres recettes",
+        texte: "Les tarifs des services publics (eau, cantines, crèches), les revenus du domaine communal (locations), et les subventions exceptionnelles complètent les ressources de la commune.",
+      },
+    ],
+  },
+  {
+    id: "depenses",
+    emoji: "📊",
+    titre: "Les dépenses : où va l'argent ?",
+    contenu: [
+      {
+        sous_titre: "Les charges de personnel",
+        texte: "En moyenne, les frais de personnel représentent 55 à 65% des dépenses de fonctionnement d'une commune. Ce poste comprend les salaires, les charges sociales et les cotisations retraite des agents territoriaux.",
+      },
+      {
+        sous_titre: "Les achats et services",
+        texte: "Énergie, entretien, fournitures, prestations de services : ces dépenses représentent 20 à 30% du budget de fonctionnement. Elles varient selon la taille et les services proposés par la commune.",
+      },
+      {
+        sous_titre: "Le remboursement de la dette",
+        texte: "Chaque année, la commune rembourse le capital et les intérêts des emprunts contractés pour financer ses investissements passés. Ce poste est prélevé sur la section d'investissement (capital) et de fonctionnement (intérêts).",
+      },
+    ],
+  },
+  {
+    id: "dette",
+    emoji: "📉",
+    titre: "La dette communale",
+    contenu: [
+      {
+        sous_titre: "Qu'est-ce que l'encours de dette ?",
+        texte: "L'encours de dette correspond au capital total que la commune doit encore rembourser à ses créanciers (banques, État). Ce n'est pas la dette de l'année, mais la dette cumulée de tous les emprunts en cours.",
+      },
+      {
+        sous_titre: "La capacité de désendettement",
+        texte: "C'est le nombre d'années nécessaires pour rembourser la totalité de la dette si la commune y consacrait toute son épargne brute. En dessous de 10 ans, la situation est considérée comme saine. Au-delà de 15 ans, elle est jugée préoccupante.",
+      },
+      {
+        sous_titre: "Dette par habitant : l'indicateur clé",
+        texte: "Pour comparer des communes de tailles différentes, on ramène la dette au nombre d'habitants. La moyenne nationale est d'environ 1 800 €/habitant, mais elle varie de moins de 500 € pour les communes les mieux gérées à plus de 5 000 € pour certaines villes très endettées.",
+      },
+    ],
+  },
+  {
+    id: "vote",
+    emoji: "🗳️",
+    titre: "Budget et élections : ce que vous devez savoir",
+    contenu: [
+      {
+        sous_titre: "Le maire et le budget",
+        texte: "C'est le maire, assisté de son équipe municipale, qui prépare et propose le budget. Le conseil municipal le vote chaque année avant le 15 avril. L'opposition peut s'exprimer lors de ce vote.",
+      },
+      {
+        sous_titre: "Que regarder avant de voter ?",
+        texte: "Évolution des dépenses de personnel, niveau d'endettement par rapport aux communes similaires, part des dépenses d'investissement (signe de dynamisme ou d'endettement excessif), et surtout la capacité de désendettement. Ces indicateurs permettent de juger la gestion passée.",
+      },
+      {
+        sous_titre: "Les promesses et le budget réel",
+        texte: "Les programmes électoraux promettent souvent des investissements importants. Pour les évaluer, comparez-les à la capacité d'autofinancement de la commune et à son encours de dette existant. Un programme très ambitieux dans une commune déjà fortement endettée mérite des explications.",
+      },
+    ],
+  },
 ];
 
-export default function CommunesClient() {
-  const router = useRouter();
-  const [query, setQuery] = useState("");
-  const [resultats, setResultats] = useState<CommuneGeo[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [rechercheLancee, setRechercheLancee] = useState(false);
-  const refInput = useRef<HTMLInputElement>(null);
+const GLOSSAIRE = [
+  { terme: "Épargne brute", definition: "Différence entre les recettes et les dépenses de fonctionnement. Elle finance les investissements et le remboursement de la dette en capital." },
+  { terme: "Dotation Globale de Fonctionnement (DGF)", definition: "Principale subvention de l'État aux communes, calculée selon la population et le potentiel fiscal." },
+  { terme: "Capacité de désendettement", definition: "Nombre d'années pour rembourser la dette en mobilisant toute l'épargne brute. Indicateur clé de santé financière." },
+  { terme: "Encours de dette", definition: "Capital total restant à rembourser sur l'ensemble des emprunts en cours au 31 décembre de l'année." },
+  { terme: "Budget primitif", definition: "Budget prévisionnel voté en début d'année, avant les ajustements liés à la réalité de l'exécution." },
+  { terme: "Compte administratif", definition: "Document qui retrace l'exécution réelle du budget : ce qui a été vraiment dépensé et encaissé dans l'année." },
+  { terme: "Taxe foncière", definition: "Impôt annuel payé par les propriétaires de biens immobiliers, calculé sur la valeur cadastrale du bien." },
+  { terme: "M14 / M57", definition: "Nomenclatures comptables utilisées par les communes françaises pour enregistrer leurs opérations budgétaires." },
+];
 
-  useEffect(() => {
-    if (query.length < 2) { setResultats([]); setRechercheLancee(false); return; }
-    const timer = setTimeout(async () => {
-      setLoading(true);
-      setRechercheLancee(true);
-      try {
-        const estCodePostal = /^\d{4,5}$/.test(query.trim());
-        const res = estCodePostal
-          ? await rechercherCommunesParCodePostal(query.trim())
-          : await rechercherCommunes(query);
-        setResultats(res);
-      } catch {
-        setResultats([]);
-      } finally {
-        setLoading(false);
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [query]);
-
-  const allerVers = (code: string) => router.push("/communes/" + code);
-
-  const styleCard: React.CSSProperties = {
+export default function PageComprendre() {
+  const styleSection: React.CSSProperties = {
     background: "var(--blanc)",
     border: "1px solid var(--bordure)",
     borderRadius: "var(--radius-lg)",
-    padding: "1.25rem 1.5rem",
-    cursor: "pointer",
-    transition: "all 200ms ease",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "1rem",
-    textDecoration: "none",
-    color: "inherit",
+    padding: "2rem",
+    marginBottom: "1.5rem",
+  };
+
+  const styleSousTitre: React.CSSProperties = {
+    fontSize: "1rem",
+    fontWeight: 600,
+    color: "var(--bleu-marine)",
+    marginBottom: ".5rem",
+    marginTop: "1.5rem",
+  };
+
+  const styleTexte: React.CSSProperties = {
+    fontSize: ".9375rem",
+    color: "var(--texte-secondaire)",
+    lineHeight: 1.75,
   };
 
   return (
@@ -74,136 +152,101 @@ export default function CommunesClient() {
           padding: "4rem 0 3.5rem",
         }}>
           <div className="container">
-            <h1 style={{
-              color: "white",
-              fontSize: "clamp(1.75rem, 4vw, 2.75rem)",
-              fontWeight: 800,
-              marginBottom: ".75rem",
-            }}>
-              {"Toutes les communes"}
+            <Link href="/" style={{ color: "rgba(255,255,255,.6)", fontSize: ".875rem", display: "inline-flex", alignItems: "center", gap: ".375rem", marginBottom: "1.5rem", textDecoration: "none" }}>
+              {"← Retour à l'accueil"}
+            </Link>
+            <h1 style={{ color: "white", fontSize: "clamp(1.75rem, 4vw, 2.75rem)", fontWeight: 800, marginBottom: ".75rem" }}>
+              {"Comprendre le budget communal"}
             </h1>
-            <p style={{ color: "rgba(255,255,255,.7)", fontSize: "1.0625rem", marginBottom: "2rem", maxWidth: 520 }}>
-              {"Recherchez parmi les 34 900 communes françaises et accédez à leurs données financières officielles."}
+            <p style={{ color: "rgba(255,255,255,.7)", fontSize: "1.0625rem", maxWidth: 560 }}>
+              {"Guide pédagogique pour décrypter les finances de votre commune — sans jargon comptable."}
             </p>
 
-            {/* Barre de recherche */}
-            <div style={{ maxWidth: 600, position: "relative" }}>
-              <div style={{
-                position: "absolute", left: "1rem", top: "50%",
-                transform: "translateY(-50%)", pointerEvents: "none",
-                color: "rgba(255,255,255,.5)",
-              }}>
-                {loading ? (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-                  </svg>
-                ) : (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-                  </svg>
-                )}
-              </div>
-              <input
-                ref={refInput}
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && resultats.length > 0) allerVers(resultats[0].code); }}
-                placeholder={"Nom de commune ou code postal..."}
-                autoComplete="off"
-                style={{
-                  width: "100%",
-                  padding: "1rem 1rem 1rem 3rem",
-                  fontSize: "1.0625rem",
-                  border: "none",
-                  borderRadius: "var(--radius-md)",
-                  outline: "none",
-                  background: "rgba(255,255,255,.95)",
-                  boxShadow: "0 4px 24px rgba(0,0,0,.2)",
-                  boxSizing: "border-box",
-                  color: "var(--texte-primaire)",
-                }}
-              />
-              {query.length > 0 && (
-                <button onClick={() => setQuery("")} style={{
-                  position: "absolute", right: ".75rem", top: "50%",
-                  transform: "translateY(-50%)", background: "none",
-                  border: "none", cursor: "pointer", fontSize: "1.25rem",
-                  color: "var(--texte-tertiaire)", padding: ".25rem",
+            {/* Navigation rapide */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem", marginTop: "2rem" }}>
+              {SECTIONS.map((s) => (
+                <a key={s.id} href={"#" + s.id} style={{
+                  fontSize: ".8125rem",
+                  color: "rgba(255,255,255,.85)",
+                  background: "rgba(255,255,255,.1)",
+                  border: "1px solid rgba(255,255,255,.2)",
+                  borderRadius: "99px",
+                  padding: ".375rem .875rem",
+                  textDecoration: "none",
                 }}>
-                  {"×"}
-                </button>
-              )}
+                  {s.emoji + " " + s.titre.split(":")[0].trim()}
+                </a>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* RÉSULTATS DE RECHERCHE */}
-        {rechercheLancee && (
-          <section style={{ padding: "2.5rem 0" }}>
-            <div className="container">
-              <p style={{ color: "var(--texte-secondaire)", fontSize: ".875rem", marginBottom: "1.25rem" }}>
-                {resultats.length > 0
-                  ? resultats.length + " résultat" + (resultats.length > 1 ? "s" : "") + " pour \"" + query + "\""
-                  : "Aucun résultat pour \"" + query + "\""}
-              </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
-                {resultats.map((c) => (
-                  <Link key={c.code} href={"/communes/" + c.code} style={styleCard}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--bleu-moyen)"; (e.currentTarget as HTMLElement).style.boxShadow = "var(--ombre-sm)"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--bordure)"; (e.currentTarget as HTMLElement).style.boxShadow = "none"; }}
-                  >
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: "1rem", color: "var(--texte-primaire)" }}>{c.nom}</div>
-                      <div style={{ fontSize: ".8125rem", color: "var(--texte-tertiaire)", marginTop: ".2rem" }}>
-                        {"Département " + c.codeDepartement}
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexShrink: 0 }}>
-                      <span style={{ fontSize: ".875rem", color: "var(--texte-secondaire)" }}>
-                        {c.population?.toLocaleString("fr-FR") + " hab."}
-                      </span>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--bleu-moyen)" strokeWidth="2" strokeLinecap="round">
-                        <path d="M5 12h14M12 5l7 7-7 7"/>
-                      </svg>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
+        {/* CONTENU */}
+        <section style={{ padding: "4rem 0" }}>
+          <div className="container" style={{ maxWidth: 860 }}>
 
-        {/* COMMUNES VEDETTES */}
-        {!rechercheLancee && (
-          <section style={{ padding: "3.5rem 0" }}>
-            <div className="container">
-              <div className="divider" style={{ marginBottom: "1rem" }} />
-              <h2 style={{ fontSize: "1.375rem", marginBottom: ".5rem" }}>{"Grandes villes"}</h2>
-              <p style={{ color: "var(--texte-secondaire)", marginBottom: "2rem", fontSize: ".9375rem" }}>
-                {"Accédez directement aux finances des principales métropoles françaises."}
-              </p>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "1rem" }}>
-                {COMMUNES_VEDETTES.map((c) => (
-                  <Link key={c.code} href={"/communes/" + c.code} style={styleCard}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--bleu-moyen)"; (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; (e.currentTarget as HTMLElement).style.boxShadow = "var(--ombre-sm)"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--bordure)"; (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLElement).style.boxShadow = "none"; }}
-                  >
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: "1.0625rem", color: "var(--texte-primaire)" }}>{c.nom}</div>
-                      <div style={{ fontSize: ".8125rem", color: "var(--texte-tertiaire)", marginTop: ".2rem" }}>
-                        {"Dép. " + c.dep + " · " + c.pop + " hab."}
-                      </div>
+            {SECTIONS.map((section) => (
+              <div key={section.id} id={section.id} style={styleSection}>
+                <div style={{ display: "flex", alignItems: "center", gap: ".75rem", marginBottom: "1.25rem" }}>
+                  <span style={{ fontSize: "1.75rem" }}>{section.emoji}</span>
+                  <h2 style={{ fontSize: "1.25rem", color: "var(--texte-primaire)" }}>{section.titre}</h2>
+                </div>
+                <div className="divider" style={{ marginBottom: "1.5rem" }} />
+                {section.contenu.map((bloc) => (
+                  <div key={bloc.sous_titre}>
+                    <h3 style={styleSousTitre}>{bloc.sous_titre}</h3>
+                    <p style={styleTexte}>{bloc.texte}</p>
+                  </div>
+                ))}
+              </div>
+            ))}
+
+            {/* GLOSSAIRE */}
+            <div id="glossaire" style={styleSection}>
+              <div style={{ display: "flex", alignItems: "center", gap: ".75rem", marginBottom: "1.25rem" }}>
+                <span style={{ fontSize: "1.75rem" }}>📖</span>
+                <h2 style={{ fontSize: "1.25rem", color: "var(--texte-primaire)" }}>{"Glossaire des termes clés"}</h2>
+              </div>
+              <div className="divider" style={{ marginBottom: "1.5rem" }} />
+              <div style={{ display: "grid", gap: "1rem" }}>
+                {GLOSSAIRE.map((item) => (
+                  <div key={item.terme} style={{
+                    background: "var(--bleu-pale)",
+                    borderRadius: "var(--radius-md)",
+                    padding: "1rem 1.25rem",
+                    borderLeft: "3px solid var(--bleu-moyen)",
+                  }}>
+                    <div style={{ fontWeight: 700, fontSize: ".9375rem", color: "var(--bleu-marine)", marginBottom: ".375rem" }}>
+                      {item.terme}
                     </div>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--bleu-moyen)" strokeWidth="2" strokeLinecap="round">
-                      <path d="M5 12h14M12 5l7 7-7 7"/>
-                    </svg>
-                  </Link>
+                    <p style={{ fontSize: ".875rem", color: "var(--texte-secondaire)", lineHeight: 1.65, margin: 0 }}>
+                      {item.definition}
+                    </p>
+                  </div>
                 ))}
               </div>
             </div>
-          </section>
-        )}
+
+            {/* CTA */}
+            <div style={{
+              background: "linear-gradient(135deg, var(--bleu-marine) 0%, var(--bleu-moyen) 100%)",
+              borderRadius: "var(--radius-xl)",
+              padding: "2.5rem",
+              textAlign: "center",
+            }}>
+              <h2 style={{ color: "white", fontSize: "1.5rem", marginBottom: ".75rem" }}>
+                {"Prêt à consulter les comptes de votre commune ?"}
+              </h2>
+              <p style={{ color: "rgba(255,255,255,.7)", marginBottom: "1.75rem", fontSize: ".9375rem" }}>
+                {"Appliquez ce que vous venez d'apprendre sur les données réelles de votre commune."}
+              </p>
+              <Link href="/communes" className="btn" style={{ background: "white", color: "var(--bleu-marine)", fontWeight: 700 }}>
+                {"Rechercher ma commune →"}
+              </Link>
+            </div>
+
+          </div>
+        </section>
 
       </main>
 
