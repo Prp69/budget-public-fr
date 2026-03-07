@@ -11,7 +11,8 @@ const NAV = [
     label: "Communes",
     href: "/communes",
     children: [
-      { label: "Rechercher une commune", href: "/communes" },
+      { label: "Rechercher une commune",    href: "/communes" },
+      { label: "Comprendre le budget",      href: "/comprendre" },
       { label: "Élections municipales 2026", href: "/elections" },
     ],
   },
@@ -19,28 +20,28 @@ const NAV = [
     label: "État",
     href: "/etat",
     children: [
-      { label: "Dépenses de l'État", href: "/etat" },
-      { label: "Budget par ministère", href: "/etat/ministeres" },
-      { label: "Dette publique", href: "/etat/dette" },
+      { label: "Dépenses de l'État",    href: "/etat" },
+      { label: "Budget par ministère",  href: "/etat/ministeres" },
+      { label: "Dette publique",        href: "/etat/dette" },
     ],
   },
   {
     label: "Impôts",
     href: "/impots",
     children: [
-      { label: "Vue d'ensemble", href: "/impots" },
-      { label: "Impôt sur le revenu", href: "/impots/ir" },
-      { label: "TVA", href: "/impots/tva" },
+      { label: "Vue d'ensemble",        href: "/impots" },
+      { label: "Impôt sur le revenu",   href: "/impots/ir" },
+      { label: "TVA",                   href: "/impots/tva" },
     ],
   },
-  { label: "Comprendre", href: "/comprendre" },
   { label: "Sources", href: "/sources" },
+  { label: "À propos", href: "/apropos" },
 ];
 
 export default function Header() {
   const pathname = usePathname();
-  const [menuOuvert, setMenuOuvert] = useState(false);
-  const [sousmenuOuvert, setSousmenuOuvert] = useState<string | null>(null);
+  const [menuOuvert, setMenuOuvert]           = useState(false);
+  const [sousmenuOuvert, setSousmenuOuvert]   = useState<string | null>(null);
 
   return (
     <header style={{
@@ -105,7 +106,7 @@ export default function Header() {
                 >
                   {item.label}
                   {hasSub && (
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
                       stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                       <path d="M6 9l6 6 6-6"/>
                     </svg>
@@ -120,7 +121,7 @@ export default function Header() {
                     border: "1px solid var(--bordure)",
                     borderRadius: "var(--radius-md)",
                     boxShadow: "var(--ombre-md)",
-                    minWidth: 220, zIndex: 200,
+                    minWidth: 230, zIndex: 200,
                     padding: ".375rem",
                   }}>
                     {item.children!.map((child) => (
@@ -133,9 +134,18 @@ export default function Header() {
                           borderRadius: "var(--radius-sm)",
                           textDecoration: "none",
                           fontSize: ".875rem",
-                          color: "var(--texte-primaire)",
+                          color: pathname === child.href ? "var(--bleu-marine)" : "var(--texte-primaire)",
                           fontWeight: pathname === child.href ? 600 : 400,
                           background: pathname === child.href ? "var(--bleu-pale)" : "transparent",
+                          transition: "background 120ms ease",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (pathname !== child.href)
+                            (e.currentTarget as HTMLElement).style.background = "var(--surface)";
+                        }}
+                        onMouseLeave={(e) => {
+                          if (pathname !== child.href)
+                            (e.currentTarget as HTMLElement).style.background = "transparent";
                         }}
                       >
                         {child.label}
@@ -151,15 +161,14 @@ export default function Header() {
         {/* Droite */}
         <div style={{ display: "flex", alignItems: "center", gap: ".75rem", flexShrink: 0 }}>
           <ThemeToggle />
-          {/* Burger mobile */}
           <button
             onClick={() => setMenuOuvert(!menuOuvert)}
+            aria-label="Menu"
             style={{
-              display: "none",
               background: "none", border: "none", cursor: "pointer",
               padding: ".375rem", color: "var(--texte-primaire)",
+              display: "none",
             }}
-            aria-label="Menu"
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -172,7 +181,7 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Menu mobile */}
+      {/* Menu mobile (affiché via CSS si petit écran) */}
       {menuOuvert && (
         <div style={{
           borderTop: "1px solid var(--bordure)",
