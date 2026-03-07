@@ -1,16 +1,8 @@
 // src/lib/api.ts
-// ─────────────────────────────────────────────────────────────────────────────
-// Sources : OFGL (data.ofgl.fr) + geo.api.gouv.fr
-//
 // Dataset  : ofgl-base-communes-consolidee
-// Champs confirmés par debug :
-//   com_code  → "75056"
-//   exer      → type DATE  → filtrer avec  exer=date'2023-01-01'
-//   agregat   → nom de l'agrégat (string)
-//   montant   → euros DIRECTS (pas en milliers)
-//   ptot      → population (déjà dans la réponse)
-//   euros_par_habitant → déjà calculé
-// ─────────────────────────────────────────────────────────────────────────────
+// exer     : type DATE → exer=date'2023-01-01'
+// montant  : euros directs
+// ptot     : population incluse dans la réponse
 
 const OFGL_BASE = "https://data.ofgl.fr/api/explore/v2.1/catalog/datasets";
 const DATASET   = "ofgl-base-communes-consolidee";
@@ -33,7 +25,13 @@ export interface FinancesCommune {
   recettes_investissement: number;
   encours_dette:           number;
   epargne_brute:           number;
+  frais_personnel:         number;
+  achats_charges:          number;
+  depenses_intervention:   number;
+  impots_taxes:            number;
+  dotation_etat:           number;
   depenses_par_habitant?:  number;
+  recettes_par_habitant?:  number;
   dette_par_habitant?:     number;
   population?:             number;
 }
@@ -41,6 +39,7 @@ export interface FinancesCommune {
 export interface PointHistorique {
   annee:                   number;
   depenses_fonctionnement: number;
+  recettes_fonctionnement: number;
   depenses_investissement: number;
   encours_dette:           number;
   epargne_brute:           number;
@@ -52,7 +51,15 @@ export interface ChiffresNationaux {
   nb_communes:    number;
 }
 
-// ─── Noms EXACTS des agrégats (confirmés par debug) ──────────────────────────
+export interface InfoMaire {
+  nom:           string;
+  prenom:        string;
+  dateDebut:     string;
+  etiquette?:    string;
+  source:        string;
+}
+
+// ─── Agrégats OFGL confirmés ──────────────────────────────────────────────────
 
 const AGREGATS = {
   DEPENSES_FONCTIONNEMENT: "Dépenses de fonctionnement",
@@ -61,9 +68,14 @@ const AGREGATS = {
   RECETTES_INVESTISSEMENT: "Recettes d'investissement",
   ENCOURS_DETTE:           "Encours de dette",
   EPARGNE_BRUTE:           "Epargne brute",
+  FRAIS_PERSONNEL:         "Frais de personnel",
+  ACHATS_CHARGES:          "Achats et charges externes",
+  DEPENSES_INTERVENTION:   "Dépenses d'intervention",
+  IMPOTS_TAXES:            "Impôts et taxes",
+  DGF:                     "Dotation globale de fonctionnement",
 } as const;
 
-// ─── Utilitaire formatage ─────────────────────────────────────────────────────
+// ─── Utilitaires ─────────────────────────────────────────────────────────────
 
 export function formaterMontant(euros: number): string {
   if (!euros || euros === 0) return "N/D";
@@ -74,7 +86,18 @@ export function formaterMontant(euros: number): string {
   return euros.toLocaleString("fr-FR") + " €";
 }
 
-// ─── Fonction interne ─────────────────────────────────────────────────────────
+// Calcule l'indemnité légale du maire selon la taille de la commune (art. L2123-23 CGCT)
+export function getIndemniteMaire(population: number): string {
+  if (population >= 100000) return "5 481 €/mois brut";
+  if (population >= 50000)  return "3 657 €/mois brut";
+  if (population >= 20000)  return "2 438 €/mois brut";
+  if (population >= 10000)  return "1 950 €/mois brut";
+  if (population >= 3500)   return "1 461 €/mois brut";
+  if (population >= 1000)   return "731 €/mois brut";
+  return "488 €/mois brut";
+}
+
+// ─── Fonction interne OFGL ───────────────────────────────────────────────────
 
 interface RecordOFGL {
   agregat:             string;
@@ -88,23 +111,17 @@ async function fetchAgregatsCommune(
   annee: number
 ): Promise<{ map: Record<string, number>; population: number }> {
 
-  // exer est de type DATE dans l'API OFGL v2.1
-  const dateFiltre = `date'${annee}-01-01'`;
-
+  const dateFiltre  = `date'${annee}-01-01'`;
   const nomsAgregats = Object.values(AGREGATS);
-  const whereAgregats = nomsAgregats
-    .map((a) => `agregat="${a}"`)
-    .join(" OR ");
+  const whereAgregats = nomsAgregats.map((a) => `agregat="${a}"`).join(" OR ");
 
   const params = new URLSearchParams({
     where:  `com_code="${comCode}" AND exer=${dateFiltre} AND (${whereAgregats})`,
-    select: "agregat,montant,ptot,euros_par_habitant",
-    limit:  "20",
+    select: "agregat,montant,ptot",
+    limit:  "30",
   });
 
-  const url = `${OFGL_BASE}/${DATASET}/records?${params}`;
-
-  const res = await fetch(url, {
+  const res = await fetch(`${OFGL_BASE}/${DATASET}/records?${params}`, {
     next: { revalidate: 3600 },
     headers: { Accept: "application/json" },
   });
@@ -168,24 +185,32 @@ export async function getFinancesCommune(
   for (const annee of anneesEssai) {
     try {
       const { map, population } = await fetchAgregatsCommune(codeInsee, annee);
-
       const depFonct = map[AGREGATS.DEPENSES_FONCTIONNEMENT];
       if (!depFonct) continue;
+
+      const recFonct  = map[AGREGATS.RECETTES_FONCTIONNEMENT] ?? 0;
+      const encDette  = map[AGREGATS.ENCOURS_DETTE] ?? 0;
 
       const finances: FinancesCommune = {
         annee,
         population,
         depenses_fonctionnement: depFonct,
-        recettes_fonctionnement: map[AGREGATS.RECETTES_FONCTIONNEMENT] ?? 0,
+        recettes_fonctionnement: recFonct,
         depenses_investissement: map[AGREGATS.DEPENSES_INVESTISSEMENT] ?? 0,
         recettes_investissement: map[AGREGATS.RECETTES_INVESTISSEMENT] ?? 0,
-        encours_dette:           map[AGREGATS.ENCOURS_DETTE]           ?? 0,
+        encours_dette:           encDette,
         epargne_brute:           map[AGREGATS.EPARGNE_BRUTE]           ?? 0,
+        frais_personnel:         map[AGREGATS.FRAIS_PERSONNEL]         ?? 0,
+        achats_charges:          map[AGREGATS.ACHATS_CHARGES]          ?? 0,
+        depenses_intervention:   map[AGREGATS.DEPENSES_INTERVENTION]   ?? 0,
+        impots_taxes:            map[AGREGATS.IMPOTS_TAXES]            ?? 0,
+        dotation_etat:           map[AGREGATS.DGF]                     ?? 0,
       };
 
       if (population > 0) {
         finances.depenses_par_habitant = Math.round(depFonct / population);
-        finances.dette_par_habitant    = Math.round(finances.encours_dette / population);
+        finances.recettes_par_habitant = Math.round(recFonct / population);
+        finances.dette_par_habitant    = Math.round(encDette / population);
       }
 
       return finances;
@@ -208,6 +233,7 @@ export async function getHistoriqueCommune(codeInsee: string): Promise<PointHist
         resultats.push({
           annee,
           depenses_fonctionnement: depFonct,
+          recettes_fonctionnement: map[AGREGATS.RECETTES_FONCTIONNEMENT] ?? 0,
           depenses_investissement: map[AGREGATS.DEPENSES_INVESTISSEMENT] ?? 0,
           encours_dette:           map[AGREGATS.ENCOURS_DETTE]           ?? 0,
           epargne_brute:           map[AGREGATS.EPARGNE_BRUTE]           ?? 0,
@@ -245,16 +271,13 @@ export async function getChiffresNationaux(): Promise<ChiffresNationaux | null> 
       select: "sum(montant) as total, count(*) as nb",
       limit:  "1",
     });
-
     const res = await fetch(`${OFGL_BASE}/${DATASET}/records?${params}`, {
       next: { revalidate: 86400 },
     });
-
     if (!res.ok) return null;
     const data = await res.json();
     const r = data?.results?.[0];
     if (!r) return null;
-
     return {
       total_depenses: Math.round(r.total ?? 0),
       total_dette:    0,
@@ -262,3 +285,57 @@ export async function getChiffresNationaux(): Promise<ChiffresNationaux | null> 
     };
   } catch { return null; }
 }
+
+// ─── Maire via RNE (Répertoire National des Élus) ────────────────────────────
+// Le RNE est accessible via l'API Tabular de data.gouv.fr
+// Resource ID du fichier maires : b7f8b08d-19d3-4e40-9c5a-d77df2b5a96c
+
+export async function getMaireCommune(codeInsee: string): Promise<InfoMaire | null> {
+  try {
+    const params = new URLSearchParams({
+      where:  `Code_de_la_commune="${codeInsee}"`,
+      select: "Nom_de_l_elu,Pr_nom_de_l_elu,Date_de_debut_du_mandat,Code_de_la_nuance_politique",
+      limit:  "1",
+    });
+    const url = `https://tabular-api.data.gouv.fr/api/resources/b7f8b08d-19d3-4e40-9c5a-d77df2b5a96c/data/?${params}`;
+    const res = await fetch(url, { next: { revalidate: 86400 } });
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    const r = data?.data?.[0];
+    if (!r) return null;
+
+    return {
+      nom:       r["Nom_de_l_elu"]           ?? "",
+      prenom:    r["Pr_nom_de_l_elu"]        ?? "",
+      dateDebut: r["Date_de_debut_du_mandat"] ?? "",
+      etiquette: NUANCES[r["Code_de_la_nuance_politique"]] ?? r["Code_de_la_nuance_politique"],
+      source:    "Répertoire National des Élus (RNE)",
+    };
+  } catch { return null; }
+}
+
+// Table de correspondance des nuances politiques RNE
+const NUANCES: Record<string, string> = {
+  "LREM":  "La République En Marche",
+  "RN":    "Rassemblement National",
+  "PS":    "Parti Socialiste",
+  "LR":    "Les Républicains",
+  "PCF":   "Parti Communiste Français",
+  "EELV":  "Europe Écologie Les Verts",
+  "FI":    "La France Insoumise",
+  "DVD":   "Divers droite",
+  "DVG":   "Divers gauche",
+  "DVE":   "Divers écologiste",
+  "DVC":   "Divers centre",
+  "SE":    "Sans étiquette",
+  "RDG":   "Radical de Gauche",
+  "UDI":   "Union des Démocrates et Indépendants",
+  "PRG":   "Parti Radical de Gauche",
+  "MDM":   "Mouvement Démocrate",
+  "LCOP":  "Liste citoyenne",
+  "LIOT":  "Libertés, Indépendants, Outre-mer et Territoires",
+  "HOR":   "Horizons",
+  "REN":   "Renaissance",
+  "NUP":   "NUPES",
+};
