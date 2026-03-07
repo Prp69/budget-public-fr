@@ -1,16 +1,203 @@
-Failed to compile.
-./src/components/CommuneCharts.tsx:198:19
-Type error: Type '(props: Record<string, number>) => JSX.Element | null' is not assignable to type 'PieLabel | undefined'.
-  Type '(props: Record<string, number>) => JSX.Element | null' is not assignable to type '(props: PieLabelRenderProps) => ReactNode | ReactElement<SVGElement, string | JSXElementConstructor<any>>'.
-    Types of parameters 'props' and 'props' are incompatible.
-      Type 'PieLabelRenderProps' is not assignable to type 'Record<string, number>'.
-        Index signature for type 'string' is missing in type 'PieLabelRenderProps'.
-  196 |                   dataKey="value"
-  197 |                   labelLine={false}
-> 198 |                   label={renderCustomLabel}
-      |                   ^
-  199 |                 >
-  200 |                   {pieData.map((entry, i) => (
-  201 |                     <Cell key={i} fill={entry.color} />
-Next.js build worker exited with code: 1 and signal: null
-Error: Command "npm run build" exited with 1
+"use client";
+
+// src/components/CommuneCharts.tsx
+import {
+  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell,
+} from "recharts";
+import { PointHistorique, FinancesCommune } from "@/lib/api";
+
+interface Props {
+  historique: PointHistorique[];
+  nomCommune: string;
+  finances?:  FinancesCommune | null;
+}
+
+function formaterAxe(euros: number): string {
+  if (euros >= 1_000_000_000) return (euros / 1_000_000_000).toFixed(1) + " Md€";
+  if (euros >= 1_000_000)     return (euros / 1_000_000).toFixed(0) + " M€";
+  if (euros >= 1_000)         return (euros / 1_000).toFixed(0) + " k€";
+  return euros + " €";
+}
+
+const tooltipStyle = {
+  borderRadius: 8,
+  border: "1px solid var(--bordure)",
+  background: "var(--surface-elevee)",
+  color: "var(--texte-primaire)",
+  fontSize: "0.8125rem",
+};
+
+const LABELS: Record<string, string> = {
+  depenses_fonctionnement: "Dép. fonctionnement",
+  recettes_fonctionnement: "Rec. fonctionnement",
+  depenses_investissement: "Investissements",
+  encours_dette:           "Encours dette",
+  epargne_brute:           "Épargne brute",
+};
+
+const tooltipFormatter = (val: number, name: string): [string, string] => [
+  formaterAxe(val),
+  LABELS[name] ?? name,
+];
+
+const COULEURS_PIE = ["#1E4E8C", "#0891B2", "#C1292E", "#059669", "#F59E0B", "#8B5CF6"];
+
+interface PieEntry { name: string; value: number; color: string; }
+
+function buildPie(f: FinancesCommune): PieEntry[] {
+  const raw: Array<[string, number]> = [
+    ["Frais de personnel",     f.frais_personnel       ?? 0],
+    ["Achats et charges ext.", f.achats_charges        ?? 0],
+    ["Intervention sociale",   f.depenses_intervention ?? 0],
+    ["Investissements",        f.depenses_investissement],
+    ["Autres",                 Math.max(0,
+      f.depenses_fonctionnement
+      - (f.frais_personnel ?? 0)
+      - (f.achats_charges  ?? 0)
+      - (f.depenses_intervention ?? 0)
+      - f.depenses_investissement
+    )],
+  ];
+  return raw
+    .filter(([, v]) => (v as number) > 0)
+    .map(([name, value], i) => ({
+      name: name as string,
+      value: value as number,
+      color: COULEURS_PIE[i % COULEURS_PIE.length],
+    }));
+}
+
+export default function CommuneCharts({ historique, finances }: Props) {
+  const card: React.CSSProperties = {
+    background: "var(--blanc)",
+    border: "1px solid var(--bordure)",
+    borderRadius: "var(--radius-lg)",
+    padding: "1.5rem",
+    boxShadow: "var(--ombre-xs)",
+  };
+  const titre: React.CSSProperties = {
+    fontSize: "1rem", fontWeight: 600,
+    marginBottom: "1.25rem", color: "var(--texte-primaire)",
+  };
+
+  if (!historique || historique.length === 0) {
+    return (
+      <div style={{
+        textAlign: "center", padding: "3rem",
+        color: "var(--texte-secondaire)", fontSize: ".9375rem",
+        background: "var(--bleu-pale)", borderRadius: "var(--radius-lg)",
+        border: "1px solid var(--bordure)",
+      }}>
+        {"Données historiques non disponibles."}
+      </div>
+    );
+  }
+
+  const pieData = finances ? buildPie(finances) : [];
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+
+      {/* 1 — Fonctionnement */}
+      <div style={card}>
+        <p style={titre}>{"Fonctionnement : dépenses et recettes"}</p>
+        <ResponsiveContainer width="100%" height={240}>
+          <AreaChart data={historique} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+            <defs>
+              <linearGradient id="gDep" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%"  stopColor="#C1292E" stopOpacity={0.2} />
+                <stop offset="95%" stopColor="#C1292E" stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id="gRec" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%"  stopColor="#059669" stopOpacity={0.2} />
+                <stop offset="95%" stopColor="#059669" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--bordure)" />
+            <XAxis dataKey="annee" tick={{ fontSize: 12, fill: "var(--texte-secondaire)" }} />
+            <YAxis tickFormatter={formaterAxe} tick={{ fontSize: 11, fill: "var(--texte-secondaire)" }} width={72} />
+            <Tooltip formatter={tooltipFormatter as never} contentStyle={tooltipStyle} />
+            <Legend wrapperStyle={{ fontSize: 12 }} formatter={(v) => LABELS[v] ?? v} />
+            <Area type="monotone" dataKey="depenses_fonctionnement" stroke="#C1292E" strokeWidth={2} fill="url(#gDep)" dot={{ r: 3 }} />
+            <Area type="monotone" dataKey="recettes_fonctionnement" stroke="#059669" strokeWidth={2} fill="url(#gRec)" dot={{ r: 3 }} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* 2 — Investissements & épargne */}
+      <div style={card}>
+        <p style={titre}>{"Investissements et épargne brute"}</p>
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={historique} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--bordure)" />
+            <XAxis dataKey="annee" tick={{ fontSize: 12, fill: "var(--texte-secondaire)" }} />
+            <YAxis tickFormatter={formaterAxe} tick={{ fontSize: 11, fill: "var(--texte-secondaire)" }} width={72} />
+            <Tooltip formatter={tooltipFormatter as never} contentStyle={tooltipStyle} />
+            <Legend wrapperStyle={{ fontSize: 12 }} formatter={(v) => LABELS[v] ?? v} />
+            <Bar dataKey="depenses_investissement" fill="#1E4E8C" radius={[4, 4, 0, 0]} opacity={0.85} />
+            <Bar dataKey="epargne_brute"           fill="#0891B2" radius={[4, 4, 0, 0]} opacity={0.85} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* 3 — Dette */}
+      <div style={card}>
+        <p style={titre}>{"Encours de dette"}</p>
+        <ResponsiveContainer width="100%" height={200}>
+          <AreaChart data={historique} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+            <defs>
+              <linearGradient id="gDette" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%"  stopColor="#C1292E" stopOpacity={0.25} />
+                <stop offset="95%" stopColor="#C1292E" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--bordure)" />
+            <XAxis dataKey="annee" tick={{ fontSize: 12, fill: "var(--texte-secondaire)" }} />
+            <YAxis tickFormatter={formaterAxe} tick={{ fontSize: 11, fill: "var(--texte-secondaire)" }} width={72} />
+            <Tooltip formatter={tooltipFormatter as never} contentStyle={tooltipStyle} />
+            <Area type="monotone" dataKey="encours_dette" name="encours_dette" stroke="#C1292E" strokeWidth={2} fill="url(#gDette)" dot={{ r: 3 }} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* 4 — Camembert sans label custom (pourcentages dans tooltip) */}
+      {finances && pieData.length > 0 && (
+        <div style={card}>
+          <p style={titre}>{"Répartition des dépenses par nature"}</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "1rem", alignItems: "center" }}>
+            <ResponsiveContainer width="100%" height={260}>
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={110}
+                  dataKey="value"
+                  labelLine={false}
+                >
+                  {pieData.map((entry, i) => (
+                    <Cell key={i} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(val: number, name: string) => [formaterAxe(val), name]}
+                  contentStyle={tooltipStyle}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+            <div style={{ display: "flex", flexDirection: "column", gap: ".5rem", minWidth: 170 }}>
+              {pieData.map((e, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: ".5rem", fontSize: ".8125rem" }}>
+                  <span style={{ width: 12, height: 12, borderRadius: 3, background: e.color, flexShrink: 0 }} />
+                  <span style={{ color: "var(--texte-secondaire)" }}>{e.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
