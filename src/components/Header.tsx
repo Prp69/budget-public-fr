@@ -1,194 +1,223 @@
-'use client';
+"use client";
 
-/**
- * Header.tsx — Composant d'en-tête réutilisable de Budget Public
- * Sticky, responsive, avec logo textuel et navigation minimaliste.
- */
-
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
+// src/components/Header.tsx
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
 
-export default function Header() {
-  // Ombre sur le header dès que l'utilisateur scroll
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
+const NAV = [
+  {
+    label: "Communes",
+    href: "/communes",
+    children: [
+      { label: "Rechercher une commune", href: "/communes" },
+      { label: "Élections municipales 2026", href: "/elections" },
+    ],
+  },
+  {
+    label: "État",
+    href: "/etat",
+    children: [
+      { label: "Dépenses de l'État", href: "/etat" },
+      { label: "Budget par ministère", href: "/etat/ministeres" },
+      { label: "Dette publique", href: "/etat/dette" },
+    ],
+  },
+  {
+    label: "Impôts",
+    href: "/impots",
+    children: [
+      { label: "Vue d'ensemble", href: "/impots" },
+      { label: "Impôt sur le revenu", href: "/impots/ir" },
+      { label: "TVA", href: "/impots/tva" },
+    ],
+  },
+  { label: "Comprendre", href: "/comprendre" },
+  { label: "Sources", href: "/sources" },
+];
 
-  useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 10);
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+export default function Header() {
+  const pathname = usePathname();
+  const [menuOuvert, setMenuOuvert] = useState(false);
+  const [sousmenuOuvert, setSousmenuOuvert] = useState<string | null>(null);
 
   return (
-    <header
-      style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 50,
-        background: 'var(--blanc)',
-        borderBottom: `1px solid ${isScrolled ? 'var(--bordure)' : 'transparent'}`,
-        boxShadow: isScrolled ? 'var(--ombre-sm)' : 'none',
-        transition: 'box-shadow 200ms, border-color 200ms',
-      }}
-    >
-      {/* Bandeau officiel haut de page */}
-      <div
-        style={{
-          background: 'var(--bleu-marine)',
-          color: 'var(--blanc)',
-          fontSize: '.75rem',
-          padding: '.35rem 0',
-          letterSpacing: '.01em',
-        }}
-      >
-        <div className="container" style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
-          {/* Icône drapeau tricolore */}
-          <span style={{ display: 'flex', gap: '2px' }}>
-            <span style={{ width: 12, height: 12, background: '#002395', borderRadius: '1px', display: 'inline-block' }} />
-            <span style={{ width: 12, height: 12, background: '#fff', borderRadius: '1px', display: 'inline-block' }} />
-            <span style={{ width: 12, height: 12, background: '#ED2939', borderRadius: '1px', display: 'inline-block' }} />
-          </span>
-          <span style={{ opacity: .85 }}>
-            Site d'information civique — Données issues de sources officielles (DGFiP, INSEE)
-          </span>
-        </div>
-      </div>
+    <header style={{
+      position: "sticky", top: 0, zIndex: 100,
+      background: "var(--blanc)",
+      borderBottom: "1px solid var(--bordure)",
+      boxShadow: "var(--ombre-xs)",
+    }}>
+      <div className="container" style={{
+        display: "flex", alignItems: "center",
+        justifyContent: "space-between",
+        height: 60, gap: "1rem",
+      }}>
 
-      {/* Navigation principale */}
-      <div className="container">
-        <nav
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            height: '64px',
-          }}
-        >
-          {/* Logo */} <ThemeToggle />
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '.75rem', textDecoration: 'none' }}>
-            {/* Icône carrée stylisée */}
-            <div
-              style={{
-                width: 38,
-                height: 38,
-                background: 'var(--bleu-marine)',
-                borderRadius: 'var(--radius-sm)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              {/* Pictogramme simple : graphe à barres */}
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <rect x="2" y="10" width="4" height="8" rx="1" fill="white" opacity=".8"/>
-                <rect x="8" y="6"  width="4" height="12" rx="1" fill="white"/>
-                <rect x="14" y="2" width="4" height="16" rx="1" fill="white" opacity=".6"/>
-              </svg>
-            </div>
-
-            {/* Texte logo */}
-            <div>
-              <div style={{ fontWeight: 700, fontSize: '1.125rem', color: 'var(--bleu-marine)', lineHeight: 1.1, letterSpacing: '-.02em' }}>
-                Budget Public
-              </div>
-              <div style={{ fontSize: '.6875rem', color: 'var(--texte-secondaire)', lineHeight: 1.2, fontWeight: 400 }}>
-                Finances des communes françaises
-              </div>
-            </div>
-          </Link>
-
-          {/* Liens de navigation — desktop */}
-          <div
-            style={{ display: 'flex', alignItems: 'center', gap: '1.75rem' }}
-            className="nav-links-desktop"
-          >
-            <Link href="/communes" style={navLinkStyle}>Communes</Link>
-            <Link href="/comprendre" style={navLinkStyle}>Comprendre le budget</Link>
-            <Link href="/sources" style={navLinkStyle}>Sources officielles</Link>
-            <Link href="/elections" className="btn btn-primary" style={{ fontSize: '.875rem', padding: '.5rem 1.125rem' }}>
-              Élections 15 mars →
-            </Link>
+        {/* Logo */}
+        <Link href="/" style={{
+          textDecoration: "none",
+          display: "flex", alignItems: "center", gap: ".6rem",
+          flexShrink: 0,
+        }}>
+          <div style={{
+            width: 28, height: 28, borderRadius: 7,
+            background: "linear-gradient(135deg, var(--bleu-marine) 0%, var(--bleu-moyen) 100%)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            color: "white", fontSize: ".875rem", fontWeight: 800,
+          }}>
+            {"B"}
           </div>
+          <span style={{
+            fontWeight: 800, fontSize: "1rem",
+            color: "var(--bleu-marine)", letterSpacing: "-.02em",
+          }}>
+            {"Budget Public"}
+          </span>
+        </Link>
 
-          {/* Bouton hamburger — mobile */}
+        {/* Nav desktop */}
+        <nav style={{ display: "flex", alignItems: "center", gap: ".25rem" }}>
+          {NAV.map((item) => {
+            const actif = pathname === item.href || pathname.startsWith(item.href + "/");
+            const hasSub = item.children && item.children.length > 0;
+
+            return (
+              <div
+                key={item.href}
+                style={{ position: "relative" }}
+                onMouseEnter={() => hasSub && setSousmenuOuvert(item.href)}
+                onMouseLeave={() => setSousmenuOuvert(null)}
+              >
+                <Link
+                  href={item.href}
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: ".25rem",
+                    padding: ".375rem .75rem",
+                    borderRadius: "var(--radius-sm)",
+                    textDecoration: "none",
+                    fontSize: ".875rem", fontWeight: actif ? 700 : 500,
+                    color: actif ? "var(--bleu-marine)" : "var(--texte-secondaire)",
+                    background: actif ? "var(--bleu-pale)" : "transparent",
+                    transition: "all 150ms ease",
+                  }}
+                >
+                  {item.label}
+                  {hasSub && (
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                      <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                  )}
+                </Link>
+
+                {/* Sous-menu */}
+                {hasSub && sousmenuOuvert === item.href && (
+                  <div style={{
+                    position: "absolute", top: "calc(100% + 4px)", left: 0,
+                    background: "var(--blanc)",
+                    border: "1px solid var(--bordure)",
+                    borderRadius: "var(--radius-md)",
+                    boxShadow: "var(--ombre-md)",
+                    minWidth: 220, zIndex: 200,
+                    padding: ".375rem",
+                  }}>
+                    {item.children!.map((child) => (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        style={{
+                          display: "block",
+                          padding: ".5rem .875rem",
+                          borderRadius: "var(--radius-sm)",
+                          textDecoration: "none",
+                          fontSize: ".875rem",
+                          color: "var(--texte-primaire)",
+                          fontWeight: pathname === child.href ? 600 : 400,
+                          background: pathname === child.href ? "var(--bleu-pale)" : "transparent",
+                        }}
+                      >
+                        {child.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </nav>
+
+        {/* Droite */}
+        <div style={{ display: "flex", alignItems: "center", gap: ".75rem", flexShrink: 0 }}>
+          <ThemeToggle />
+          {/* Burger mobile */}
           <button
-            onClick={() => setMenuOpen(!menuOpen)}
+            onClick={() => setMenuOuvert(!menuOuvert)}
             style={{
-              display: 'none',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '.5rem',
-              color: 'var(--bleu-marine)',
+              display: "none",
+              background: "none", border: "none", cursor: "pointer",
+              padding: ".375rem", color: "var(--texte-primaire)",
             }}
-            className="nav-hamburger"
             aria-label="Menu"
           >
-            {menuOpen ? (
-              <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <path d="M4 4l14 14M18 4L4 18"/>
-              </svg>
-            ) : (
-              <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <path d="M3 6h16M3 11h16M3 16h16"/>
-              </svg>
-            )}
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              {menuOuvert
+                ? <><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>
+                : <><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></>
+              }
+            </svg>
           </button>
-        </nav>
+        </div>
       </div>
 
-      {/* Menu mobile déroulant */}
-      {menuOpen && (
-        <div
-          style={{
-            background: 'var(--blanc)',
-            borderTop: '1px solid var(--bordure)',
-            padding: '1rem 0 1.5rem',
-          }}
-          className="nav-mobile-menu"
-        >
-          <div className="container" style={{ display: 'flex', flexDirection: 'column', gap: '.25rem' }}>
-            {[
-              { href: '/communes', label: 'Communes' },
-              { href: '/comprendre', label: 'Comprendre le budget' },
-              { href: '/sources', label: 'Sources officielles' },
-            ].map(({ href, label }) => (
+      {/* Menu mobile */}
+      {menuOuvert && (
+        <div style={{
+          borderTop: "1px solid var(--bordure)",
+          padding: "1rem",
+          display: "flex", flexDirection: "column", gap: ".25rem",
+        }}>
+          {NAV.map((item) => (
+            <div key={item.href}>
               <Link
-                key={href}
-                href={href}
-                style={{ padding: '.75rem .5rem', color: 'var(--texte-primaire)', fontWeight: 500, borderBottom: '1px solid var(--bordure)' }}
-                onClick={() => setMenuOpen(false)}
+                href={item.href}
+                onClick={() => setMenuOuvert(false)}
+                style={{
+                  display: "block", padding: ".625rem .875rem",
+                  borderRadius: "var(--radius-sm)",
+                  textDecoration: "none",
+                  fontSize: ".9375rem", fontWeight: 600,
+                  color: "var(--texte-primaire)",
+                  background: pathname.startsWith(item.href) ? "var(--bleu-pale)" : "transparent",
+                }}
               >
-                {label}
+                {item.label}
               </Link>
-            ))}
-            <Link href="/elections" className="btn btn-primary" style={{ marginTop: '.75rem', justifyContent: 'center' }}>
-              Élections 15 mars →
-            </Link>
-          </div>
+              {item.children && (
+                <div style={{ paddingLeft: "1rem" }}>
+                  {item.children.map((child) => (
+                    <Link
+                      key={child.href}
+                      href={child.href}
+                      onClick={() => setMenuOuvert(false)}
+                      style={{
+                        display: "block", padding: ".5rem .875rem",
+                        borderRadius: "var(--radius-sm)",
+                        textDecoration: "none",
+                        fontSize: ".875rem", color: "var(--texte-secondaire)",
+                      }}
+                    >
+                      {child.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
-
-      {/* Styles responsive via balise style inline */}
-      <style jsx>{`
-        @media (max-width: 768px) {
-          .nav-links-desktop { display: none !important; }
-          .nav-hamburger { display: flex !important; }
-        }
-      `}</style>
     </header>
   );
 }
-
-/* Style partagé pour les liens de nav */
-const navLinkStyle: React.CSSProperties = {
-  fontSize: '.9rem',
-  fontWeight: 500,
-  color: 'var(--texte-secondaire)',
-  textDecoration: 'none',
-  transition: 'color var(--transition)',
-  paddingBottom: '2px',
-  borderBottom: '2px solid transparent',
-};
