@@ -5,6 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import SearchBar from "@/components/SearchBar";
 import { ChiffresNationaux, formaterMontant } from "@/lib/api";
+import StatCard from "@/components/StatCard";
 
 // ─── Icônes ───────────────────────────────────────────────────────────────────
 
