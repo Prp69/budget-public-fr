@@ -5,7 +5,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
 } from "recharts";
-import { HistoriqueCommune } from "@/lib/api";
+import { PointHistorique } from "@/lib/api";
 
 interface Props {
   historique: HistoriqueCommune[];
