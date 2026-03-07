@@ -487,7 +487,7 @@ export default async function PageCommune(
         <section style={{ padding: "0 0 3.5rem" }}>
           <div className="container">
             <h2 style={{ fontSize: "1.25rem", marginBottom: "1.25rem" }}>{"Comparer avec d'autres communes"}</h2>
-            <Comparateur codeInitial={code} />
+            <Comparateur />
           </div>
         </section>
 
