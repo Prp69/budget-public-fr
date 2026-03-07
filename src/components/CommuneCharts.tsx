@@ -181,7 +181,7 @@ export default function CommuneCharts({ historique, finances }: Props) {
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(val: number, name: string) => [formaterAxe(val), name]}
+                  formatter={((val: number, name: string) => [formaterAxe(val ?? 0), name]) as never}
                   contentStyle={tooltipStyle}
                 />
               </PieChart>
