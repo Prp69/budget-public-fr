@@ -4,7 +4,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import SearchBar from "@/components/SearchBar";
-import StatCard from "@/components/StatCard";
 import { ChiffresNationaux, formaterMontant } from "@/lib/api";
 
 // ─── Icônes ───────────────────────────────────────────────────────────────────
@@ -48,18 +47,20 @@ export default function HomeClient({ chiffres }: Props) {
   const stats = chiffres
     ? [
         {
-          label:    "Communes couvertes",
-          value:    (chiffres.nb_communes ?? 34900).toLocaleString("fr-FR"),
-          icon:     <IconCommunes />,
-          color:    "var(--bleu-moyen)",
-          sublabel: "sur 34 935 communes françaises",
+          label:       "Communes couvertes",
+          value:       (chiffres.nb_communes ?? 34900).toLocaleString("fr-FR"),
+          icon:        <IconCommunes />,
+          accentColor: "var(--bleu-moyen)",
+          description: "sur 34 935 communes françaises",
+          source:      "geo.api.gouv.fr",
         },
         {
-          label:    "Dépenses de fonctionnement 2023",
-          value:    formaterMontant(chiffres.total_depenses),
-          icon:     <IconDepenses />,
-          color:    "var(--rouge-accent)",
-          sublabel: "total national (budgets principaux + annexes)",
+          label:       "Dépenses de fonctionnement 2023",
+          value:       formaterMontant(chiffres.total_depenses),
+          icon:        <IconDepenses />,
+          accentColor: "var(--rouge-accent)",
+          description: "total national (budgets principaux + annexes)",
+          source:      "OFGL / DGFiP",
         },
       ]
     : [];
@@ -158,8 +159,9 @@ export default function HomeClient({ chiffres }: Props) {
                   label={s.label}
                   value={s.value}
                   icon={s.icon}
-                  color={s.color}
-                  sublabel={s.sublabel}
+                  accentColor={s.accentColor}
+                  description={s.description}
+                  source={s.source}
                 />
               ))}
             </div>
