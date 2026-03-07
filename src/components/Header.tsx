@@ -113,24 +113,34 @@ export default function Header() {
                   )}
                 </Link>
 
+                {/* Pont invisible : comble le gap entre le lien et le dropdown */}
+                {hasSub && sousmenuOuvert === item.href && (
+                  <div style={{
+                    position: "absolute", top: "100%", left: 0,
+                    width: "100%", height: 12,
+                    zIndex: 199,
+                  }} />
+                )}
+
                 {/* Sous-menu */}
                 {hasSub && sousmenuOuvert === item.href && (
                   <div style={{
-                    position: "absolute", top: "calc(100% + 4px)", left: 0,
+                    position: "absolute", top: "calc(100% + 8px)", left: 0,
                     background: "var(--blanc)",
                     border: "1px solid var(--bordure)",
                     borderRadius: "var(--radius-md)",
                     boxShadow: "var(--ombre-md)",
-                    minWidth: 230, zIndex: 200,
+                    minWidth: 240, zIndex: 200,
                     padding: ".375rem",
                   }}>
                     {item.children!.map((child) => (
                       <Link
                         key={child.href}
                         href={child.href}
+                        onClick={() => setSousmenuOuvert(null)}
                         style={{
                           display: "block",
-                          padding: ".5rem .875rem",
+                          padding: ".625rem .875rem",
                           borderRadius: "var(--radius-sm)",
                           textDecoration: "none",
                           fontSize: ".875rem",
