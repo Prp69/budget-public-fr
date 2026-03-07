@@ -39,6 +39,12 @@ export interface PointHistorique {
   epargne_brute:           number;
 }
 
+export interface ChiffresNationaux {
+  total_depenses: number;
+  total_dette:    number;
+  nb_communes:    number;
+}
+
 // ─── Noms exacts des agrégats dans ofgl-base-communes-consolidee ──────────────
 // Vérifiés sur : https://data.ofgl.fr/explore/dataset/ofgl-base-communes-consolidee/api/
 const AGREGATS = {
@@ -249,11 +255,7 @@ export async function getFinancesPlusieursCommunes(
 }
 
 /** Agrégats nationaux 2023 pour la page d'accueil */
-export async function getChiffresNationaux(): Promise<{
-  total_depenses: number;
-  total_dette:    number;
-  nb_communes:    number;
-} | null> {
+export async function getChiffresNationaux(): Promise<ChiffresNationaux | null> {
   try {
     const params = new URLSearchParams({
       where:  `exer="2023" AND agregat="${AGREGATS.DEPENSES_FONCTIONNEMENT}"`,
