@@ -1,278 +1,282 @@
-// ============================================================
 // src/lib/api.ts
-// ============================================================
+// API Budget Public — Sources : OFGL (data.ofgl.fr) + geo.api.gouv.fr
+// Dataset OFGL : ofgl-base-communes-consolidee (budgets principaux + annexes, 2017-2024)
+// Champ commune  : com_code
+// Champ année    : exer (string "2023")
+// Champ agrégat  : agregat (PAS type_de_budget, PAS agregat_bp)
+// Champ montant  : mtm (en milliers d'euros — à multiplier par 1000)
+
+const OFGL_BASE = "https://data.ofgl.fr/api/explore/v2.1/catalog/datasets";
+const DATASET   = "ofgl-base-communes-consolidee";
+const GEO_BASE  = "https://geo.api.gouv.fr";
+
+// ─── Types publics ────────────────────────────────────────────────────────────
 
 export interface CommuneGeo {
-  code: string;
-  nom: string;
-  population: number;
-  codeDepartement: string;
-  codeRegion: string;
+  code:             string;
+  nom:              string;
+  codeDepartement:  string;
+  population?:      number;
 }
 
 export interface FinancesCommune {
-  annee: number;
-  depenses_fonctionnement: number;
-  recettes_fonctionnement: number;
-  depenses_investissement: number;
-  recettes_investissement: number;
-  encours_dette: number;
-  capacite_autofinancement: number;
-  population: number;
-  depenses_par_habitant?: number;
-  dette_par_habitant?: number;
+  annee:                    number;
+  depenses_fonctionnement:  number; // euros
+  recettes_fonctionnement:  number;
+  depenses_investissement:  number;
+  recettes_investissement:  number;
+  encours_dette:            number;
+  epargne_brute:            number;
+  depenses_par_habitant?:   number;
+  dette_par_habitant?:      number;
 }
 
-export interface ChiffresNationaux {
-  annee: number;
-  depenses_totales_communes: number;
-  investissements_communes: number;
-  dette_totale_communes: number;
-  depenses_par_habitant_moyen: number;
-}
-
-export interface HistoriqueCommune {
-  annee: number;
+export interface PointHistorique {
+  annee:                   number;
   depenses_fonctionnement: number;
   depenses_investissement: number;
-  encours_dette: number;
-  recettes_fonctionnement: number;
+  encours_dette:           number;
+  epargne_brute:           number;
 }
 
-// --- Agrégats OFGL à récupérer ---
-// L'API retourne une ligne par agrégat — on récupère ceux dont on a besoin
+// ─── Noms exacts des agrégats dans ofgl-base-communes-consolidee ──────────────
+// Vérifiés sur : https://data.ofgl.fr/explore/dataset/ofgl-base-communes-consolidee/api/
 const AGREGATS = {
-  DEPENSES_FONCTIONNEMENT: "Dépenses de fonctionnement",
-  RECETTES_FONCTIONNEMENT: "Recettes de fonctionnement",
-  DEPENSES_INVESTISSEMENT: "Dépenses d'investissement",
-  RECETTES_INVESTISSEMENT: "Recettes d'investissement",
-  ENCOURS_DETTE:           "Encours de la dette au 31/12/N",
-  EPARGNE_BRUTE:           "Epargne brute",
-};
+  DEPENSES_FONCTIONNEMENT:  "Dépenses de fonctionnement",
+  RECETTES_FONCTIONNEMENT:  "Recettes de fonctionnement",
+  DEPENSES_INVESTISSEMENT:  "Dépenses d'investissement",
+  RECETTES_INVESTISSEMENT:  "Recettes d'investissement",
+  ENCOURS_DETTE:            "Encours de la dette au 31/12/N",
+  EPARGNE_BRUTE:            "Epargne brute",
+} as const;
 
-// Récupère tous les agrégats d'une commune pour une année
+// ─── Utilitaires ──────────────────────────────────────────────────────────────
+
+// Le champ mtm est en milliers d'euros dans OFGL consolidé
+function mtmVersEuros(mtm: number | null | undefined): number {
+  if (!mtm) return 0;
+  return Math.round(mtm * 1000);
+}
+
+export function formaterMontant(euros: number): string {
+  if (!euros || euros === 0) return "N/D";
+  const abs = Math.abs(euros);
+  if (abs >= 1_000_000_000) return (euros / 1_000_000_000).toFixed(1).replace(".", ",") + " Md€";
+  if (abs >= 1_000_000)     return (euros / 1_000_000).toFixed(1).replace(".", ",") + " M€";
+  if (abs >= 1_000)         return (euros / 1_000).toFixed(0) + " k€";
+  return euros.toLocaleString("fr-FR") + " €";
+}
+
+// ─── Fonction interne : récupère tous les agrégats d'une commune/année ────────
+
 async function fetchAgregatsCommune(
   comCode: string,
   annee: number
 ): Promise<Record<string, number>> {
-  const agregatsRecherches = Object.values(AGREGATS)
+  // On demande tous les agrégats connus en une seule requête
+  const nomsAgregats = Object.values(AGREGATS);
+  const whereAgregats = nomsAgregats
     .map((a) => `agregat="${a}"`)
-    .join(" or ");
+    .join(" OR ");
 
-  const url =
-    `https://data.ofgl.fr/api/explore/v2.1/catalog/datasets/ofgl-base-communes/records` +
-    `?where=com_code%3D%22${comCode}%22%20and%20exer%3D%22${annee}%22%20and%20type_de_budget%3D%22Budget%20principal%22%20and%20(${encodeURIComponent(agregatsRecherches)})` +
-    `&select=agregat%2Cmontant%2Cptot` +
-    `&limit=20`;
+  const params = new URLSearchParams({
+    where:  `com_code="${comCode}" AND exer="${annee}" AND (${whereAgregats})`,
+    select: "agregat,mtm",
+    limit:  "20",
+  });
 
-  try {
-    const res = await fetch(url, { next: { revalidate: 3600 } });
-    if (!res.ok) return {};
-    const data = await res.json();
-    if (!data.results?.length) return {};
+  const url = `${OFGL_BASE}/${DATASET}/records?${params}`;
 
-    const result: Record<string, number> = {};
-    let pop = 0;
-    for (const r of data.results) {
-      result[r.agregat] = r.montant ?? 0;
-      if (r.ptot) pop = r.ptot;
+  const res = await fetch(url, {
+    next: { revalidate: 3600 },
+    headers: { Accept: "application/json" },
+  });
+
+  if (!res.ok) return {};
+
+  const data = await res.json();
+  const records: Array<{ agregat: string; mtm: number }> = data?.results ?? [];
+
+  const map: Record<string, number> = {};
+  for (const r of records) {
+    if (r.agregat && r.mtm !== undefined) {
+      map[r.agregat] = mtmVersEuros(r.mtm);
     }
-    result["__population"] = pop;
-    return result;
-  } catch {
-    return {};
   }
+  return map;
 }
 
-// --- 1. Recherche de commune par nom -------------------------
+// ─── API publiques ────────────────────────────────────────────────────────────
 
+/** Recherche de communes par nom */
 export async function rechercherCommunes(nom: string): Promise<CommuneGeo[]> {
   if (!nom || nom.length < 2) return [];
-  const url = `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(nom)}&fields=nom,code,population,codeDepartement,codeRegion&boost=population&limit=8`;
-  const res = await fetch(url, { next: { revalidate: 86400 } });
-  if (!res.ok) return [];
-  return res.json();
-}
-
-// --- 2. Recherche par code postal ----------------------------
-
-export async function rechercherCommunesParCodePostal(
-  codePostal: string
-): Promise<CommuneGeo[]> {
-  const url = `https://geo.api.gouv.fr/communes?codePostal=${codePostal}&fields=nom,code,population,codeDepartement,codeRegion&boost=population&limit=8`;
   try {
-    const res = await fetch(url, { next: { revalidate: 86400 } });
+    const params = new URLSearchParams({
+      nom,
+      fields: "code,nom,codeDepartement,population",
+      boost:  "population",
+      limit:  "10",
+    });
+    const res = await fetch(`${GEO_BASE}/communes?${params}`);
     if (!res.ok) return [];
-    return res.json();
+    return await res.json();
   } catch {
     return [];
   }
 }
 
-// --- 3. Finances d'une commune -------------------------------
+/** Recherche de communes par code postal */
+export async function rechercherCommunesParCodePostal(
+  cp: string
+): Promise<CommuneGeo[]> {
+  if (!cp || cp.length < 4) return [];
+  try {
+    const params = new URLSearchParams({
+      codePostal: cp,
+      fields:     "code,nom,codeDepartement,population",
+      boost:      "population",
+      limit:      "10",
+    });
+    const res = await fetch(`${GEO_BASE}/communes?${params}`);
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
 
+/** Finances d'une commune avec fallback automatique sur les années précédentes */
 export async function getFinancesCommune(
   codeInsee: string,
-  annee: number = 2023
+  anneeDepart = 2024
 ): Promise<FinancesCommune | null> {
-  const anneesAEssayer = [annee, 2023, 2022, 2021, 2020];
+  const anneesEssai = [anneeDepart, 2023, 2022, 2021, 2020];
 
-  for (const a of anneesAEssayer) {
-    const agregats = await fetchAgregatsCommune(codeInsee, a);
-    if (!Object.keys(agregats).length) continue;
+  for (const annee of anneesEssai) {
+    try {
+      const map = await fetchAgregatsCommune(codeInsee, annee);
 
-    const depFonct  = agregats[AGREGATS.DEPENSES_FONCTIONNEMENT] ?? 0;
-    const recFonct  = agregats[AGREGATS.RECETTES_FONCTIONNEMENT] ?? 0;
-    const depInvest = agregats[AGREGATS.DEPENSES_INVESTISSEMENT] ?? 0;
-    const recInvest = agregats[AGREGATS.RECETTES_INVESTISSEMENT] ?? 0;
-    const dette     = agregats[AGREGATS.ENCOURS_DETTE]           ?? 0;
-    const caf       = agregats[AGREGATS.EPARGNE_BRUTE]           ?? 0;
-    const pop       = agregats["__population"]                   || 1;
+      // On considère les données valides si on a au moins les dépenses de fonctionnement
+      const depFonct = map[AGREGATS.DEPENSES_FONCTIONNEMENT];
+      if (!depFonct) continue;
 
-    if (!depFonct && !dette) continue;
+      // Population pour les ratios par habitant
+      let population = 0;
+      try {
+        const geoRes = await fetch(
+          `${GEO_BASE}/communes/${codeInsee}?fields=population`,
+          { next: { revalidate: 86400 } }
+        );
+        if (geoRes.ok) {
+          const geoData = await geoRes.json();
+          population = geoData.population ?? 0;
+        }
+      } catch { /* pas de population, les ratios seront undefined */ }
 
-    const finances: FinancesCommune = {
-      annee: a,
-      depenses_fonctionnement:  depFonct,
-      recettes_fonctionnement:  recFonct,
-      depenses_investissement:  depInvest,
-      recettes_investissement:  recInvest,
-      encours_dette:            dette,
-      capacite_autofinancement: caf,
-      population:               pop,
-    };
+      const finances: FinancesCommune = {
+        annee,
+        depenses_fonctionnement:  depFonct,
+        recettes_fonctionnement:  map[AGREGATS.RECETTES_FONCTIONNEMENT]  ?? 0,
+        depenses_investissement:  map[AGREGATS.DEPENSES_INVESTISSEMENT]  ?? 0,
+        recettes_investissement:  map[AGREGATS.RECETTES_INVESTISSEMENT]  ?? 0,
+        encours_dette:            map[AGREGATS.ENCOURS_DETTE]            ?? 0,
+        epargne_brute:            map[AGREGATS.EPARGNE_BRUTE]            ?? 0,
+      };
 
-    finances.depenses_par_habitant = Math.round(
-      (depFonct + depInvest) / pop
-    );
-    finances.dette_par_habitant = Math.round(dette / pop);
+      if (population > 0) {
+        finances.depenses_par_habitant = Math.round(finances.depenses_fonctionnement / population);
+        finances.dette_par_habitant    = Math.round(finances.encours_dette / population);
+      }
 
-    return finances;
+      return finances;
+    } catch {
+      continue;
+    }
   }
 
   return null;
 }
 
-// --- 4. Historique d'une commune sur 5 ans ------------------
-
+/** Historique sur 6 ans pour les graphiques */
 export async function getHistoriqueCommune(
   codeInsee: string
-): Promise<HistoriqueCommune[]> {
-  const annees = [2019, 2020, 2021, 2022, 2023];
-  const resultats: HistoriqueCommune[] = [];
+): Promise<PointHistorique[]> {
+  const annees = [2024, 2023, 2022, 2021, 2020, 2019];
+  const resultats: PointHistorique[] = [];
 
   await Promise.all(
-    annees.map(async (a) => {
-      const agregats = await fetchAgregatsCommune(codeInsee, a);
-      if (!Object.keys(agregats).length) return;
+    annees.map(async (annee) => {
+      try {
+        const map = await fetchAgregatsCommune(codeInsee, annee);
+        const depFonct = map[AGREGATS.DEPENSES_FONCTIONNEMENT];
+        if (!depFonct) return;
 
-      const depFonct  = agregats[AGREGATS.DEPENSES_FONCTIONNEMENT] ?? 0;
-      const depInvest = agregats[AGREGATS.DEPENSES_INVESTISSEMENT] ?? 0;
-      const dette     = agregats[AGREGATS.ENCOURS_DETTE]           ?? 0;
-      const recFonct  = agregats[AGREGATS.RECETTES_FONCTIONNEMENT] ?? 0;
-
-      if (!depFonct && !dette) return;
-
-      resultats.push({
-        annee: a,
-        depenses_fonctionnement: Math.round(depFonct / 1000),
-        depenses_investissement: Math.round(depInvest / 1000),
-        encours_dette:           Math.round(dette / 1000),
-        recettes_fonctionnement: Math.round(recFonct / 1000),
-      });
+        resultats.push({
+          annee,
+          depenses_fonctionnement: depFonct,
+          depenses_investissement: map[AGREGATS.DEPENSES_INVESTISSEMENT] ?? 0,
+          encours_dette:           map[AGREGATS.ENCOURS_DETTE]           ?? 0,
+          epargne_brute:           map[AGREGATS.EPARGNE_BRUTE]           ?? 0,
+        });
+      } catch { /* ignore les années sans données */ }
     })
   );
 
+  // Tri chronologique
   return resultats.sort((a, b) => a.annee - b.annee);
 }
 
-// --- 5. Chiffres nationaux -----------------------------------
-
-export async function getChiffresNationaux(): Promise<ChiffresNationaux> {
-  const url =
-    `https://data.ofgl.fr/api/explore/v2.1/catalog/datasets/ofgl-base-communes/records` +
-    `?where=exer%3D%222023%22%20and%20type_de_budget%3D%22Budget%20principal%22%20and%20agregat%3D%22D%C3%A9penses%20de%20fonctionnement%22` +
-    `&select=sum(montant)%20as%20total_fonct%2Csum(ptot)%20as%20total_pop` +
-    `&limit=1`;
-
-  try {
-    const res = await fetch(url, { next: { revalidate: 86400 } });
-    if (!res.ok) throw new Error("indisponible");
-    const data = await res.json();
-    const r = data.results?.[0] ?? {};
-
-    const urlInvest =
-      `https://data.ofgl.fr/api/explore/v2.1/catalog/datasets/ofgl-base-communes/records` +
-      `?where=exer%3D%222023%22%20and%20type_de_budget%3D%22Budget%20principal%22%20and%20agregat%3D%22D%C3%A9penses%20d%27investissement%22` +
-      `&select=sum(montant)%20as%20total_invest` +
-      `&limit=1`;
-
-    const urlDette =
-      `https://data.ofgl.fr/api/explore/v2.1/catalog/datasets/ofgl-base-communes/records` +
-      `?where=exer%3D%222023%22%20and%20type_de_budget%3D%22Budget%20principal%22%20and%20agregat%3D%22Encours%20de%20la%20dette%20au%2031%2F12%2FN%22` +
-      `&select=sum(montant)%20as%20total_dette` +
-      `&limit=1`;
-
-    const [resInvest, resDette] = await Promise.all([
-      fetch(urlInvest, { next: { revalidate: 86400 } }).then((r) => r.json()),
-      fetch(urlDette,  { next: { revalidate: 86400 } }).then((r) => r.json()),
-    ]);
-
-    const totalFonct  = r.total_fonct  ?? 0;
-    const totalInvest = resInvest.results?.[0]?.total_invest ?? 0;
-    const totalDette  = resDette.results?.[0]?.total_dette   ?? 0;
-    const totalPop    = r.total_pop ?? 67000000;
-    const totalDep    = totalFonct + totalInvest;
-
-    return {
-      annee: 2023,
-      depenses_totales_communes:   Math.round(totalDep    / 1_000_000) / 1000,
-      investissements_communes:    Math.round(totalInvest / 1_000_000) / 1000,
-      dette_totale_communes:       Math.round(totalDette  / 1_000_000) / 1000,
-      depenses_par_habitant_moyen: Math.round(totalDep / totalPop),
-    };
-  } catch {
-    return {
-      annee: 2023,
-      depenses_totales_communes: 245.8,
-      investissements_communes:  58.4,
-      dette_totale_communes:     198.3,
-      depenses_par_habitant_moyen: 2312,
-    };
-  }
-}
-
-// --- 6. Finances plusieurs communes (comparateur) -----------
-
+/** Finances de plusieurs communes en parallèle (pour le comparateur) */
 export async function getFinancesPlusieursCommunes(
-  codesInsee: string[]
-): Promise<(FinancesCommune & { nom: string; codeInsee: string })[]> {
-  const resultats = await Promise.all(
-    codesInsee.map(async (code) => {
-      const [finances, nomRes] = await Promise.all([
-        getFinancesCommune(code, 2023),
-        fetch(`https://geo.api.gouv.fr/communes/${code}?fields=nom`, {
-          next: { revalidate: 86400 },
-        }).then((r) => r.json()).catch(() => ({ nom: code })),
-      ]);
-      if (!finances) return null;
-      return { ...finances, nom: nomRes.nom ?? code, codeInsee: code };
+  codes: string[]
+): Promise<Array<{ code: string; nom: string; finances: FinancesCommune | null }>> {
+  return Promise.all(
+    codes.map(async (code) => {
+      try {
+        const [geoRes, finances] = await Promise.all([
+          fetch(`${GEO_BASE}/communes/${code}?fields=nom`, {
+            next: { revalidate: 86400 },
+          }).then((r) => r.json()).catch(() => ({ nom: code })),
+          getFinancesCommune(code, 2024),
+        ]);
+        return { code, nom: geoRes.nom ?? code, finances };
+      } catch {
+        return { code, nom: code, finances: null };
+      }
     })
   );
-  return resultats.filter(Boolean) as (FinancesCommune & { nom: string; codeInsee: string })[];
 }
 
-// --- Utilitaire : formater les montants ---------------------
+/** Agrégats nationaux 2023 pour la page d'accueil */
+export async function getChiffresNationaux(): Promise<{
+  total_depenses: number;
+  total_dette:    number;
+  nb_communes:    number;
+} | null> {
+  try {
+    const params = new URLSearchParams({
+      where:  `exer="2023" AND agregat="${AGREGATS.DEPENSES_FONCTIONNEMENT}"`,
+      select: "sum(mtm) as total_mtm, count(*) as nb",
+      limit:  "1",
+    });
 
-export function formaterMontant(valeurEuros: number): string {
-  if (valeurEuros >= 1_000_000_000) {
-    return `${(valeurEuros / 1_000_000_000).toFixed(2)} Md€`;
+    const res = await fetch(
+      `${OFGL_BASE}/${DATASET}/records?${params}`,
+      { next: { revalidate: 86400 } }
+    );
+
+    if (!res.ok) return null;
+    const data = await res.json();
+    const r = data?.results?.[0];
+    if (!r) return null;
+
+    return {
+      total_depenses: mtmVersEuros(r.total_mtm ?? 0),
+      total_dette:    0,
+      nb_communes:    r.nb ?? 34900,
+    };
+  } catch {
+    return null;
   }
-  if (valeurEuros >= 1_000_000) {
-    return `${(valeurEuros / 1_000_000).toFixed(2)} M€`;
-  }
-  if (valeurEuros >= 1_000) {
-    return `${(valeurEuros / 1_000).toFixed(1)} k€`;
-  }
-  return `${valeurEuros.toLocaleString("fr-FR")} €`;
 }
