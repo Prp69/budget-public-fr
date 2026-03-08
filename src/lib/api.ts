@@ -287,29 +287,81 @@ export async function getChiffresNationaux(): Promise<ChiffresNationaux | null> 
 }
 
 // ─── Maire via RNE (Répertoire National des Élus) ────────────────────────────
-// Le RNE est accessible via l'API Tabular de data.gouv.fr
-// Resource ID du fichier maires : b7f8b08d-19d3-4e40-9c5a-d77df2b5a96c
+// Dataset : rne-maires sur data.gouv.fr via API Tabular
+// Deux resource IDs connus — on essaie les deux si le premier échoue.
+// Le filtre Libelle_de_la_fonction = 'Maire' est crucial pour ne pas retourner
+// les adjoints ou conseillers du même code commune.
+
+const RNE_RESOURCES = [
+  "b7f8b08d-19d3-4e40-9c5a-d77df2b5a96c", // dataset historique
+  "430e13f9-834b-4431-a433-3a3dbc9a2bac", // alias possible
+];
 
 export async function getMaireCommune(codeInsee: string): Promise<InfoMaire | null> {
+  for (const resourceId of RNE_RESOURCES) {
+    try {
+      // Syntaxe correcte pour l'API Tabular data.gouv.fr :
+      // - les valeurs string dans where doivent être entre guillemets simples
+      // - Libelle_de_la_fonction filtre uniquement les maires (pas les adjoints)
+      const params = new URLSearchParams({
+        where:  `Code_de_la_commune='${codeInsee}' AND Libelle_de_la_fonction='Maire'`,
+        limit:  "1",
+      });
+      const url = `https://tabular-api.data.gouv.fr/api/resources/${resourceId}/data/?${params}`;
+      const res = await fetch(url, { next: { revalidate: 86400 } });
+      if (!res.ok) continue;
+
+      const data = await res.json();
+      const r = data?.data?.[0];
+      if (!r) continue;
+
+      // Les noms de colonnes varient selon la version du dataset
+      const nom    = r["Nom_de_l_elu"]    ?? r["nom_de_l_elu"]    ?? r["NOM"]    ?? "";
+      const prenom = r["Pr_nom_de_l_elu"] ?? r["pr_nom_de_l_elu"] ?? r["PRENOM"] ?? "";
+      const debut  = r["Date_de_debut_du_mandat"] ?? r["date_de_debut_du_mandat"] ?? "";
+      const nuance = r["Code_de_la_nuance_politique"] ?? r["code_de_la_nuance_politique"] ?? "";
+
+      if (!nom) continue;
+
+      return {
+        nom,
+        prenom,
+        dateDebut: debut,
+        etiquette: NUANCES[nuance] ?? nuance ?? undefined,
+        source:    "Répertoire National des Élus (RNE)",
+      };
+    } catch { continue; }
+  }
+
+  // Fallback : recherche sans filtre de fonction (certains datasets n'ont pas cette colonne)
   try {
     const params = new URLSearchParams({
-      where:  `Code_de_la_commune="${codeInsee}"`,
-      select: "Nom_de_l_elu,Pr_nom_de_l_elu,Date_de_debut_du_mandat,Code_de_la_nuance_politique",
-      limit:  "1",
+      where: `Code_de_la_commune='${codeInsee}'`,
+      limit: "5",
     });
-    const url = `https://tabular-api.data.gouv.fr/api/resources/b7f8b08d-19d3-4e40-9c5a-d77df2b5a96c/data/?${params}`;
+    const url = `https://tabular-api.data.gouv.fr/api/resources/${RNE_RESOURCES[0]}/data/?${params}`;
     const res = await fetch(url, { next: { revalidate: 86400 } });
     if (!res.ok) return null;
 
     const data = await res.json();
-    const r = data?.data?.[0];
-    if (!r) return null;
+    const rows: Record<string, string>[] = data?.data ?? [];
+    if (!rows.length) return null;
+
+    // Trouver le maire parmi les résultats
+    const maire = rows.find((r) => {
+      const fn = (r["Libelle_de_la_fonction"] ?? r["libelle_de_la_fonction"] ?? "").toLowerCase();
+      return fn.includes("maire") && !fn.includes("adjoint");
+    }) ?? rows[0];
+
+    const nom    = maire["Nom_de_l_elu"]    ?? maire["NOM"]    ?? "";
+    const prenom = maire["Pr_nom_de_l_elu"] ?? maire["PRENOM"] ?? "";
+    if (!nom) return null;
 
     return {
-      nom:       r["Nom_de_l_elu"]           ?? "",
-      prenom:    r["Pr_nom_de_l_elu"]        ?? "",
-      dateDebut: r["Date_de_debut_du_mandat"] ?? "",
-      etiquette: NUANCES[r["Code_de_la_nuance_politique"]] ?? r["Code_de_la_nuance_politique"],
+      nom,
+      prenom,
+      dateDebut: maire["Date_de_debut_du_mandat"] ?? "",
+      etiquette: NUANCES[maire["Code_de_la_nuance_politique"] ?? ""] ?? undefined,
       source:    "Répertoire National des Élus (RNE)",
     };
   } catch { return null; }
