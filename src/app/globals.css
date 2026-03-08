@@ -1,318 +1,258 @@
-/* ============================================================
-   Budget Public — Styles globaux
-   ============================================================ */
+/* src/app/globals.css — Budget Public v2 */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
-
-/* --- Variables MODE CLAIR (défaut) ------------------------ */
+/* ── Variables ─────────────────────────────────────────────────────────── */
 :root {
-  --bleu-marine:      #003189;
-  --bleu-moyen:       #1E4E8C;
-  --bleu-clair:       #E8EEF8;
-  --bleu-pale:        #F0F4FC;
-  --rouge-accent:     #C1292E;
-  --rouge-pale:       #FDF0F0;
+  /* Palette France douce */
+  --bleu:          #2B4C8C;   /* bleu drapeau adouci */
+  --bleu-fonce:    #1A3260;
+  --bleu-clair:    #E8EEF8;
+  --bleu-pale:     #F0F4FB;
+  --rouge:         #C0392B;   /* rouge brique */
+  --rouge-doux:    #E8543A;
+  --rouge-pale:    #FDF1EF;
+  --creme:         #FAFAF7;   /* fond principal */
+  --creme-fonce:   #F2F1ED;
+  --blanc:         #FFFFFF;
+  --noir:          #111111;
+  --encre:         #1C1C1C;
+  --gris-1:        #3D3D3D;
+  --gris-2:        #6B6B6B;
+  --gris-3:        #9B9B9B;
+  --gris-4:        #D0CFC8;
+  --gris-5:        #E8E7E1;
+  --bordure:       #E0DED7;
 
-  --fond:             #F8F9FB;
-  --blanc:            #FFFFFF;
-  --surface:          #FFFFFF;
-  --surface-elevee:   #FFFFFF;
+  /* Typographie */
+  --serif:         'Playfair Display', Georgia, serif;
+  --sans:          'DM Sans', system-ui, sans-serif;
+  --mono:          'DM Mono', 'Courier New', monospace;
 
-  --texte-primaire:   #111827;
-  --texte-secondaire: #4B5563;
-  --texte-tertiaire:  #9CA3AF;
+  /* Espacements */
+  --radius-sm:     4px;
+  --radius-md:     8px;
+  --radius-lg:     12px;
+  --radius-xl:     20px;
 
-  --bordure:          #E5E7EB;
-  --bordure-forte:    #D1D5DB;
+  /* Ombres */
+  --ombre-xs: 0 1px 3px rgba(0,0,0,.06);
+  --ombre-sm: 0 2px 8px rgba(0,0,0,.08);
+  --ombre-md: 0 8px 24px rgba(0,0,0,.1);
+  --ombre-lg: 0 20px 48px rgba(0,0,0,.12);
 
-  --ombre-xs: 0 1px 2px rgba(0,0,0,.05);
-  --ombre-sm: 0 2px 8px rgba(0,49,137,.07);
-  --ombre-md: 0 4px 20px rgba(0,49,137,.10);
-  --ombre-lg: 0 8px 40px rgba(0,49,137,.12);
+  /* Éléments */
+  --surface:       var(--creme-fonce);
+  --texte-primaire:    var(--encre);
+  --texte-secondaire:  var(--gris-1);
+  --texte-tertiaire:   var(--gris-2);
 
-  --font-sans: 'DM Sans', 'Marianne', 'Inter', system-ui, sans-serif;
-  --font-mono: 'DM Mono', 'Courier New', monospace;
-
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-
-  --transition: 200ms cubic-bezier(.4,0,.2,1);
+  /* Largeur max */
+  --max-w: 1160px;
 }
 
-/* --- Variables MODE SOMBRE — forcé via bouton ------------- */
-:root[data-theme="dark"] {
-  --fond:             #080C14;
-  --blanc:            #0F1420;
-  --surface:          #0F1420;
-  --surface-elevee:   #161D2E;
-  --bleu-pale:        #111827;
-  --bleu-clair:       #1A2540;
-  --rouge-pale:       #1A0A0B;
-
-  --texte-primaire:   #EEF2FF;
-  --texte-secondaire: #94A3C0;
-  --texte-tertiaire:  #4A5A7A;
-
-  --bordure:          rgba(148,163,192,.12);
-  --bordure-forte:    rgba(148,163,192,.22);
-
-  --ombre-xs: 0 1px 4px rgba(0,0,0,.5);
-  --ombre-sm: 0 2px 8px rgba(0,0,0,.4);
-  --ombre-md: 0 4px 20px rgba(0,0,0,.5);
-  --ombre-lg: 0 8px 40px rgba(0,0,0,.6);
-}
-
-/* --- Variables MODE CLAIR — forcé via bouton -------------- */
-:root[data-theme="light"] {
-  --fond:             #F8F9FB;
-  --blanc:            #FFFFFF;
-  --surface:          #FFFFFF;
-  --surface-elevee:   #FFFFFF;
-  --bleu-pale:        #F0F4FC;
-  --bleu-clair:       #E8EEF8;
-  --rouge-pale:       #FDF0F0;
-
-  --texte-primaire:   #111827;
-  --texte-secondaire: #4B5563;
-  --texte-tertiaire:  #9CA3AF;
-
-  --bordure:          #E5E7EB;
-  --bordure-forte:    #D1D5DB;
-
-  --ombre-xs: 0 1px 2px rgba(0,0,0,.05);
-  --ombre-sm: 0 2px 8px rgba(0,49,137,.07);
-  --ombre-md: 0 4px 20px rgba(0,49,137,.10);
-  --ombre-lg: 0 8px 40px rgba(0,49,137,.12);
-}
-
-/* --- Variables MODE SOMBRE — détection système ------------ */
+/* Mode sombre */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]):not([data-theme="dark"]) {
-    --fond:             #080C14;
-    --blanc:            #0F1420;
-    --surface:          #0F1420;
-    --surface-elevee:   #161D2E;
-    --bleu-pale:        #111827;
-    --bleu-clair:       #1A2540;
-    --rouge-pale:       #1A0A0B;
-
-    --texte-primaire:   #EEF2FF;
-    --texte-secondaire: #94A3C0;
-    --texte-tertiaire:  #4A5A7A;
-
-    --bordure:          rgba(148,163,192,.12);
-    --bordure-forte:    rgba(148,163,192,.22);
-
-    --ombre-xs: 0 1px 4px rgba(0,0,0,.5);
-    --ombre-sm: 0 2px 8px rgba(0,0,0,.4);
-    --ombre-md: 0 4px 20px rgba(0,0,0,.5);
-    --ombre-lg: 0 8px 40px rgba(0,0,0,.6);
+  :root {
+    --creme:         #141412;
+    --creme-fonce:   #1C1C1A;
+    --blanc:         #1E1E1C;
+    --encre:         #F0EFE9;
+    --gris-1:        #C8C7C1;
+    --gris-2:        #8C8B85;
+    --gris-3:        #5C5B56;
+    --gris-4:        #3C3B37;
+    --gris-5:        #2C2B27;
+    --bordure:       #2E2D29;
+    --surface:       #1C1C1A;
+    --bleu-pale:     #1A2440;
+    --bleu-clair:    #1A2440;
+    --rouge-pale:    #2A1814;
   }
 }
 
-/* --- Reset ------------------------------------------------ */
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  transition:
-    background-color .25s ease,
-    border-color .2s ease,
-    color .15s ease,
-    box-shadow .2s ease;
-}
+/* ── Reset ─────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html {
   font-size: 16px;
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  font-family: var(--font-sans);
-  background-color: var(--fond);
-  color: var(--texte-primaire);
+  font-family: var(--sans);
+  background: var(--creme);
+  color: var(--encre);
   line-height: 1.6;
-  min-height: 100dvh;
+  min-height: 100vh;
 }
 
-/* --- Recharts mode sombre --------------------------------- */
-[data-theme="dark"] .recharts-default-tooltip {
-  background-color: var(--surface-elevee) !important;
-  border-color: var(--bordure) !important;
-  color: var(--texte-primaire) !important;
-}
-[data-theme="dark"] .recharts-tooltip-item {
-  color: var(--texte-secondaire) !important;
-}
-[data-theme="dark"] .recharts-legend-item-text {
-  color: var(--texte-secondaire) !important;
-}
-[data-theme="dark"] .recharts-cartesian-grid line {
-  stroke: rgba(255,255,255,.05) !important;
-}
-[data-theme="dark"] .recharts-text {
-  fill: var(--texte-secondaire) !important;
-}
-
-/* Même chose pour thème système */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]):not([data-theme="dark"]) .recharts-default-tooltip {
-    background-color: var(--surface-elevee) !important;
-    border-color: var(--bordure) !important;
-  }
-  :root:not([data-theme="light"]):not([data-theme="dark"]) .recharts-cartesian-grid line {
-    stroke: rgba(255,255,255,.05) !important;
-  }
-  :root:not([data-theme="light"]):not([data-theme="dark"]) .recharts-text {
-    fill: var(--texte-secondaire) !important;
-  }
-}
-
-/* --- Inputs mode sombre ----------------------------------- */
-[data-theme="dark"] input,
-[data-theme="dark"] textarea,
-[data-theme="dark"] select {
-  background: var(--surface-elevee) !important;
-  color: var(--texte-primaire) !important;
-  border-color: var(--bordure) !important;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]):not([data-theme="dark"]) input {
-    background: var(--surface-elevee) !important;
-    color: var(--texte-primaire) !important;
-    border-color: var(--bordure) !important;
-  }
-}
-
-/* --- Tables mode sombre ----------------------------------- */
-[data-theme="dark"] th {
-  color: var(--texte-secondaire) !important;
-}
-
-/* --- Typographie ------------------------------------------ */
-h1, h2, h3, h4, h5, h6 {
-  line-height: 1.2;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-
-p { line-height: 1.7; }
-
-a {
-  color: var(--bleu-moyen);
-  text-decoration: none;
-  transition: color var(--transition);
-}
-a:hover { color: var(--bleu-marine); }
-
-::selection {
-  background-color: var(--bleu-clair);
-  color: var(--bleu-marine);
-}
-
-/* --- Scrollbar -------------------------------------------- */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--fond); }
-::-webkit-scrollbar-thumb {
-  background: var(--bleu-clair);
-  border-radius: 99px;
-}
-::-webkit-scrollbar-thumb:hover { background: var(--bleu-moyen); }
-
-:focus-visible {
-  outline: 2px solid var(--bleu-moyen);
-  outline-offset: 3px;
-  border-radius: var(--radius-sm);
-}
-
-/* --- Animations ------------------------------------------- */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-@keyframes pulse-soft {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: .6; }
-}
-
-.animate-fade-in-up { animation: fadeInUp .5s ease both; }
-.animate-fade-in    { animation: fadeIn .4s ease both; }
-.delay-1 { animation-delay: .1s; }
-.delay-2 { animation-delay: .2s; }
-.delay-3 { animation-delay: .3s; }
-.delay-4 { animation-delay: .4s; }
-
-/* --- Layout ----------------------------------------------- */
+/* ── Container ─────────────────────────────────────────────────────────── */
 .container {
   width: 100%;
-  max-width: 1200px;
-  margin-inline: auto;
-  padding-inline: 1.5rem;
-}
-@media (min-width: 768px) {
-  .container { padding-inline: 2.5rem; }
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 0 2rem;
 }
 
-/* --- Boutons ---------------------------------------------- */
+@media (max-width: 640px) {
+  .container { padding: 0 1.25rem; }
+}
+
+/* ── Typographie ───────────────────────────────────────────────────────── */
+h1, h2, h3, h4 {
+  font-family: var(--serif);
+  line-height: 1.15;
+  letter-spacing: -.02em;
+}
+
+/* ── Séparateur Economist ──────────────────────────────────────────────── */
+.rule-rouge {
+  display: block;
+  width: 36px;
+  height: 3px;
+  background: var(--rouge);
+  border-radius: 2px;
+  margin-bottom: 1rem;
+}
+
+/* ── Boutons ───────────────────────────────────────────────────────────── */
 .btn {
   display: inline-flex;
   align-items: center;
   gap: .5rem;
-  padding: .75rem 1.5rem;
-  border-radius: var(--radius-md);
-  font-family: var(--font-sans);
-  font-size: .9375rem;
+  padding: .6875rem 1.375rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--sans);
+  font-size: .875rem;
   font-weight: 600;
+  text-decoration: none;
   cursor: pointer;
   border: none;
-  transition: all var(--transition);
-  text-decoration: none;
-  white-space: nowrap;
+  transition: all 150ms ease;
+  letter-spacing: .01em;
 }
 
-.btn-primary {
-  background: var(--bleu-marine);
-  color: #ffffff;
+.btn-primaire {
+  background: var(--bleu);
+  color: white;
 }
-.btn-primary:hover {
-  background: var(--bleu-moyen);
-  color: #ffffff;
-  transform: translateY(-1px);
-  box-shadow: var(--ombre-md);
-}
+.btn-primaire:hover { background: var(--bleu-fonce); transform: translateY(-1px); box-shadow: var(--ombre-md); }
 
-.btn-outline {
+.btn-rouge {
+  background: var(--rouge);
+  color: white;
+}
+.btn-rouge:hover { background: #a93226; transform: translateY(-1px); box-shadow: var(--ombre-md); }
+
+.btn-contour {
   background: transparent;
-  color: var(--bleu-marine);
-  border: 2px solid var(--bleu-marine);
+  color: var(--encre);
+  border: 1.5px solid var(--bordure);
 }
-.btn-outline:hover {
-  background: var(--bleu-pale);
-  color: var(--bleu-marine);
+.btn-contour:hover { border-color: var(--gris-2); background: var(--creme-fonce); }
+
+/* ── Cartes ────────────────────────────────────────────────────────────── */
+.carte {
+  background: var(--blanc);
+  border: 1px solid var(--bordure);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--ombre-xs);
+  transition: box-shadow 200ms ease, transform 200ms ease;
+}
+.carte:hover {
+  box-shadow: var(--ombre-md);
+  transform: translateY(-2px);
 }
 
-[data-theme="dark"] .btn-outline {
-  color: #7B9FE0;
-  border-color: #7B9FE0;
-}
-[data-theme="dark"] .btn-outline:hover {
-  background: var(--bleu-pale);
-  color: #A0BFFF;
+/* ── Tag / Badge ───────────────────────────────────────────────────────── */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: .375rem;
+  font-family: var(--sans);
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: .3rem .75rem;
+  border-radius: 3px;
 }
 
-/* --- Divider ---------------------------------------------- */
-.divider {
-  width: 48px;
-  height: 4px;
-  background: var(--rouge-accent);
-  border-radius: 2px;
+.tag-bleu { background: var(--bleu-pale); color: var(--bleu); }
+.tag-rouge { background: var(--rouge-pale); color: var(--rouge); }
+.tag-gris { background: var(--gris-5); color: var(--gris-2); }
+
+/* ── Graphiques style Economist ────────────────────────────────────────── */
+.chart-wrapper {
+  border-top: 3px solid var(--rouge);
+  padding-top: 1rem;
 }
+
+.chart-title {
+  font-family: var(--sans);
+  font-size: .8125rem;
+  font-weight: 700;
+  color: var(--encre);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: .375rem;
+}
+
+.chart-subtitle {
+  font-family: var(--sans);
+  font-size: .75rem;
+  color: var(--gris-2);
+  margin-bottom: 1.25rem;
+}
+
+.chart-source {
+  font-family: var(--sans);
+  font-size: .6875rem;
+  color: var(--gris-3);
+  margin-top: .875rem;
+  border-top: 1px solid var(--gris-5);
+  padding-top: .5rem;
+}
+
+/* ── Stat grande ───────────────────────────────────────────────────────── */
+.stat-number {
+  font-family: var(--serif);
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 700;
+  color: var(--bleu);
+  line-height: 1;
+  letter-spacing: -.03em;
+}
+
+.stat-rouge { color: var(--rouge); }
+
+/* ── Grille ────────────────────────────────────────────────────────────── */
+.grille-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+.grille-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+.grille-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; }
+
+@media (max-width: 900px) {
+  .grille-3 { grid-template-columns: repeat(2, 1fr); }
+  .grille-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .grille-2, .grille-3, .grille-4 { grid-template-columns: 1fr; }
+}
+
+/* ── Animations ────────────────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-up { animation: fadeUp .5s ease both; }
+.fade-up-1 { animation-delay: .1s; }
+.fade-up-2 { animation-delay: .2s; }
+.fade-up-3 { animation-delay: .3s; }
+.fade-up-4 { animation-delay: .4s; }
+
+/* ── Utilitaires ───────────────────────────────────────────────────────── */
+a { color: inherit; }
+img { max-width: 100%; }
