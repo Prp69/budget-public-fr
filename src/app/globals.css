@@ -3,15 +3,14 @@
 
 /* ── Variables ─────────────────────────────────────────────────────────── */
 :root {
-  /* Palette France douce */
-  --bleu:          #2B4C8C;   /* bleu drapeau adouci */
+  --bleu:          #2B4C8C;
   --bleu-fonce:    #1A3260;
   --bleu-clair:    #E8EEF8;
   --bleu-pale:     #F0F4FB;
-  --rouge:         #C0392B;   /* rouge brique */
+  --rouge:         #C0392B;
   --rouge-doux:    #E8543A;
   --rouge-pale:    #FDF1EF;
-  --creme:         #FAFAF7;   /* fond principal */
+  --creme:         #FAFAF7;
   --creme-fonce:   #F2F1ED;
   --blanc:         #FFFFFF;
   --noir:          #111111;
@@ -22,37 +21,24 @@
   --gris-4:        #D0CFC8;
   --gris-5:        #E8E7E1;
   --bordure:       #E0DED7;
-
-  /* Typographie */
   --serif:         'Playfair Display', Georgia, serif;
   --sans:          'DM Sans', system-ui, sans-serif;
   --mono:          'DM Mono', 'Courier New', monospace;
-
-  /* Espacements */
   --radius-sm:     4px;
   --radius-md:     8px;
   --radius-lg:     12px;
   --radius-xl:     20px;
-
-  /* Ombres */
   --ombre-xs: 0 1px 3px rgba(0,0,0,.06);
   --ombre-sm: 0 2px 8px rgba(0,0,0,.08);
   --ombre-md: 0 8px 24px rgba(0,0,0,.1);
   --ombre-lg: 0 20px 48px rgba(0,0,0,.12);
-
-  /* Éléments */
   --surface:       var(--creme-fonce);
-  --texte-primaire:    var(--encre);
-  --texte-secondaire:  var(--gris-1);
-  --texte-tertiaire:   var(--gris-2);
-
-  /* Largeur max */
   --max-w: 1160px;
 }
 
-/* Mode sombre */
+/* Mode sombre — automatique OS (seulement si pas de classe .light forcée) */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not(.light) {
     --creme:         #141412;
     --creme-fonce:   #1C1C1A;
     --blanc:         #1E1E1C;
@@ -68,6 +54,42 @@
     --bleu-clair:    #1A2440;
     --rouge-pale:    #2A1814;
   }
+}
+
+/* Mode sombre — toggle manuel (classe .dark sur <html>) */
+html.dark {
+  --creme:         #141412;
+  --creme-fonce:   #1C1C1A;
+  --blanc:         #1E1E1C;
+  --encre:         #F0EFE9;
+  --gris-1:        #C8C7C1;
+  --gris-2:        #8C8B85;
+  --gris-3:        #5C5B56;
+  --gris-4:        #3C3B37;
+  --gris-5:        #2C2B27;
+  --bordure:       #2E2D29;
+  --surface:       #1C1C1A;
+  --bleu-pale:     #1A2440;
+  --bleu-clair:    #1A2440;
+  --rouge-pale:    #2A1814;
+}
+
+/* Mode clair forcé */
+html.light {
+  --creme:         #FAFAF7;
+  --creme-fonce:   #F2F1ED;
+  --blanc:         #FFFFFF;
+  --encre:         #1C1C1C;
+  --gris-1:        #3D3D3D;
+  --gris-2:        #6B6B6B;
+  --gris-3:        #9B9B9B;
+  --gris-4:        #D0CFC8;
+  --gris-5:        #E8E7E1;
+  --bordure:       #E0DED7;
+  --surface:       #F2F1ED;
+  --bleu-pale:     #F0F4FB;
+  --bleu-clair:    #E8EEF8;
+  --rouge-pale:    #FDF1EF;
 }
 
 /* ── Reset ─────────────────────────────────────────────────────────────── */
@@ -95,10 +117,7 @@ body {
   margin: 0 auto;
   padding: 0 2rem;
 }
-
-@media (max-width: 640px) {
-  .container { padding: 0 1.25rem; }
-}
+@media (max-width: 640px) { .container { padding: 0 1.25rem; } }
 
 /* ── Typographie ───────────────────────────────────────────────────────── */
 h1, h2, h3, h4 {
@@ -110,8 +129,7 @@ h1, h2, h3, h4 {
 /* ── Séparateur Economist ──────────────────────────────────────────────── */
 .rule-rouge {
   display: block;
-  width: 36px;
-  height: 3px;
+  width: 36px; height: 3px;
   background: var(--rouge);
   border-radius: 2px;
   margin-bottom: 1rem;
@@ -119,38 +137,18 @@ h1, h2, h3, h4 {
 
 /* ── Boutons ───────────────────────────────────────────────────────────── */
 .btn {
-  display: inline-flex;
-  align-items: center;
-  gap: .5rem;
+  display: inline-flex; align-items: center; gap: .5rem;
   padding: .6875rem 1.375rem;
   border-radius: var(--radius-sm);
-  font-family: var(--sans);
-  font-size: .875rem;
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-  border: none;
-  transition: all 150ms ease;
-  letter-spacing: .01em;
+  font-family: var(--sans); font-size: .875rem; font-weight: 600;
+  text-decoration: none; cursor: pointer; border: none;
+  transition: all 150ms ease; letter-spacing: .01em;
 }
-
-.btn-primaire {
-  background: var(--bleu);
-  color: white;
-}
+.btn-primaire { background: var(--bleu); color: white; }
 .btn-primaire:hover { background: var(--bleu-fonce); transform: translateY(-1px); box-shadow: var(--ombre-md); }
-
-.btn-rouge {
-  background: var(--rouge);
-  color: white;
-}
+.btn-rouge { background: var(--rouge); color: white; }
 .btn-rouge:hover { background: #a93226; transform: translateY(-1px); box-shadow: var(--ombre-md); }
-
-.btn-contour {
-  background: transparent;
-  color: var(--encre);
-  border: 1.5px solid var(--bordure);
-}
+.btn-contour { background: transparent; color: var(--encre); border: 1.5px solid var(--bordure); }
 .btn-contour:hover { border-color: var(--gris-2); background: var(--creme-fonce); }
 
 /* ── Cartes ────────────────────────────────────────────────────────────── */
@@ -161,78 +159,79 @@ h1, h2, h3, h4 {
   box-shadow: var(--ombre-xs);
   transition: box-shadow 200ms ease, transform 200ms ease;
 }
-.carte:hover {
-  box-shadow: var(--ombre-md);
-  transform: translateY(-2px);
-}
+.carte:hover { box-shadow: var(--ombre-md); transform: translateY(-2px); }
 
 /* ── Tag / Badge ───────────────────────────────────────────────────────── */
 .tag {
-  display: inline-flex;
-  align-items: center;
-  gap: .375rem;
-  font-family: var(--sans);
-  font-size: .75rem;
-  font-weight: 600;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  padding: .3rem .75rem;
-  border-radius: 3px;
+  display: inline-flex; align-items: center; gap: .375rem;
+  font-family: var(--sans); font-size: .75rem; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase;
+  padding: .3rem .75rem; border-radius: 3px;
 }
-
-.tag-bleu { background: var(--bleu-pale); color: var(--bleu); }
+.tag-bleu  { background: var(--bleu-pale);  color: var(--bleu); }
 .tag-rouge { background: var(--rouge-pale); color: var(--rouge); }
-.tag-gris { background: var(--gris-5); color: var(--gris-2); }
+.tag-vert  { background: #E6F4EA;           color: #1E6B3C; }
+.tag-gris  { background: var(--gris-5);     color: var(--gris-2); }
 
 /* ── Graphiques style Economist ────────────────────────────────────────── */
-.chart-wrapper {
-  border-top: 3px solid var(--rouge);
-  padding-top: 1rem;
-}
-
-.chart-title {
-  font-family: var(--sans);
-  font-size: .8125rem;
-  font-weight: 700;
-  color: var(--encre);
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  margin-bottom: .375rem;
-}
-
-.chart-subtitle {
-  font-family: var(--sans);
-  font-size: .75rem;
-  color: var(--gris-2);
-  margin-bottom: 1.25rem;
-}
-
-.chart-source {
-  font-family: var(--sans);
-  font-size: .6875rem;
-  color: var(--gris-3);
-  margin-top: .875rem;
-  border-top: 1px solid var(--gris-5);
-  padding-top: .5rem;
-}
+.chart-wrapper   { border-top: 3px solid var(--rouge); padding-top: 1rem; }
+.chart-title     { font-family: var(--sans); font-size: .8125rem; font-weight: 700; color: var(--encre); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .375rem; }
+.chart-subtitle  { font-family: var(--sans); font-size: .75rem; color: var(--gris-2); margin-bottom: 1.25rem; font-style: italic; }
+.chart-source    { font-family: var(--sans); font-size: .6875rem; color: var(--gris-3); margin-top: .875rem; border-top: 1px solid var(--gris-5); padding-top: .5rem; font-style: italic; }
 
 /* ── Stat grande ───────────────────────────────────────────────────────── */
 .stat-number {
   font-family: var(--serif);
   font-size: clamp(2rem, 5vw, 3.5rem);
-  font-weight: 700;
-  color: var(--bleu);
-  line-height: 1;
-  letter-spacing: -.03em;
+  font-weight: 700; color: var(--bleu);
+  line-height: 1; letter-spacing: -.03em;
 }
-
 .stat-rouge { color: var(--rouge); }
+
+/* ── Hero page intérieure ──────────────────────────────────────────────── */
+.hero-interieur {
+  background: var(--bleu);
+  padding: 3.5rem 0 3rem;
+  position: relative; overflow: hidden;
+}
+.hero-interieur::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+.hero-interieur .inner { position: relative; }
+.hero-interieur .tag-hero {
+  display: inline-flex; align-items: center; gap: .5rem;
+  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+  border-radius: 99px; padding: .375rem 1rem; margin-bottom: 1.5rem;
+  font-size: .8125rem; color: rgba(255,255,255,.9); font-weight: 500; font-family: var(--sans);
+}
+.hero-interieur h1 {
+  font-family: var(--serif);
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  font-weight: 700; color: white;
+  margin-bottom: .875rem; letter-spacing: -.025em;
+}
+.hero-interieur .lead {
+  font-family: var(--sans); font-size: 1.0625rem;
+  color: rgba(255,255,255,.8); max-width: 600px; line-height: 1.6;
+}
+.hero-interieur .stat-hero { font-family: var(--serif); font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; color: white; line-height: 1; letter-spacing: -.03em; }
+.hero-interieur .stat-hero-label { font-family: var(--sans); font-size: .8125rem; color: rgba(255,255,255,.65); margin-top: .375rem; }
+
+/* ── Sections page intérieure ──────────────────────────────────────────── */
+.section-page { padding: 4rem 0; border-bottom: 1px solid var(--bordure); }
+.section-page:last-of-type { border-bottom: none; }
+.section-titre { font-family: var(--serif); font-size: clamp(1.25rem, 2.5vw, 1.75rem); font-weight: 700; color: var(--encre); margin-bottom: 1.5rem; }
 
 /* ── Grille ────────────────────────────────────────────────────────────── */
 .grille-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
 .grille-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
 .grille-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; }
-
 @media (max-width: 900px) {
   .grille-3 { grid-template-columns: repeat(2, 1fr); }
   .grille-4 { grid-template-columns: repeat(2, 1fr); }
@@ -246,8 +245,7 @@ h1, h2, h3, h4 {
   from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
-.fade-up { animation: fadeUp .5s ease both; }
+.fade-up   { animation: fadeUp .5s ease both; }
 .fade-up-1 { animation-delay: .1s; }
 .fade-up-2 { animation-delay: .2s; }
 .fade-up-3 { animation-delay: .3s; }

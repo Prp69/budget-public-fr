@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const NAV = [
   {
-    label: "Communes",
-    href: "/communes",
+    label: "Communes", href: "/communes",
     children: [
       { label: "Rechercher une commune",     href: "/communes" },
       { label: "Comprendre le budget",       href: "/comprendre" },
@@ -15,8 +15,7 @@ const NAV = [
     ],
   },
   {
-    label: "État",
-    href: "/etat",
+    label: "État", href: "/etat",
     children: [
       { label: "Vue d'ensemble",       href: "/etat" },
       { label: "Budget par ministère", href: "/etat/ministeres" },
@@ -24,8 +23,7 @@ const NAV = [
     ],
   },
   {
-    label: "Impôts",
-    href: "/impots",
+    label: "Impôts", href: "/impots",
     children: [
       { label: "Vue d'ensemble",      href: "/impots" },
       { label: "Impôt sur le revenu", href: "/impots/ir" },
@@ -37,8 +35,8 @@ const NAV = [
 
 export default function Header() {
   const pathname = usePathname();
-  const [open, setOpen]     = useState<string | null>(null);
-  const [mobile, setMobile] = useState(false);
+  const [open, setOpen]       = useState<string | null>(null);
+  const [mobile, setMobile]   = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -47,14 +45,23 @@ export default function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Fermer le menu mobile à chaque changement de route
+  useEffect(() => { setMobile(false); }, [pathname]);
+
   return (
     <header style={{
       position: "sticky", top: 0, zIndex: 100,
-      background: scrolled ? "rgba(250,250,247,.97)" : "var(--creme)",
-      borderBottom: scrolled ? "1px solid var(--bordure)" : "1px solid transparent",
+      // Utilise les variables CSS — s'adapte automatiquement au dark mode
+      background: scrolled
+        ? "color-mix(in srgb, var(--creme) 97%, transparent)"
+        : "var(--creme)",
+      borderBottom: scrolled
+        ? "1px solid var(--bordure)"
+        : "1px solid transparent",
       backdropFilter: "blur(12px)",
+      WebkitBackdropFilter: "blur(12px)",
       transition: "background 200ms ease, border-color 200ms ease, box-shadow 200ms ease",
-      boxShadow: scrolled ? "0 2px 16px rgba(0,0,0,.06)" : "none",
+      boxShadow: scrolled ? "0 2px 16px rgba(0,0,0,.07)" : "none",
     }}>
       <div className="container" style={{
         display: "flex", alignItems: "center",
@@ -63,18 +70,22 @@ export default function Header() {
       }}>
 
         {/* ── Logo ── */}
-        <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: ".75rem", flexShrink: 0 }}>
-          <div style={{ display: "flex", height: 26, borderRadius: 4, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,.15)" }}>
+        <Link href="/" style={{
+          textDecoration: "none", display: "flex",
+          alignItems: "center", gap: ".75rem", flexShrink: 0,
+        }}>
+          <div style={{
+            display: "flex", height: 26,
+            borderRadius: 4, overflow: "hidden",
+            boxShadow: "0 1px 4px rgba(0,0,0,.15)",
+          }}>
             <div style={{ width: 7, background: "#2B4C8C" }} />
-            <div style={{ width: 7, background: "#FAFAF7" }} />
+            <div style={{ width: 7, background: "var(--creme-fonce)" }} />
             <div style={{ width: 7, background: "#C0392B" }} />
           </div>
           <span style={{
-            fontFamily: "var(--serif)",
-            fontWeight: 700,
-            fontSize: "1.125rem",
-            color: "var(--encre)",
-            letterSpacing: "-.02em",
+            fontFamily: "var(--serif)", fontWeight: 700,
+            fontSize: "1.125rem", color: "var(--encre)", letterSpacing: "-.02em",
           }}>
             {"Budget"}<span style={{ color: "var(--bleu)" }}>{"Public"}</span>
           </span>
@@ -85,6 +96,7 @@ export default function Header() {
           {NAV.map((item) => {
             const actif = pathname === item.href || pathname.startsWith(item.href + "/");
             const hasSub = !!item.children;
+            const isOpen = open === item.href;
             return (
               <div
                 key={item.href}
@@ -95,43 +107,41 @@ export default function Header() {
                 <Link href={item.href} style={{
                   display: "inline-flex", alignItems: "center", gap: ".3rem",
                   padding: ".5rem .875rem",
-                  fontFamily: "var(--sans)",
-                  fontSize: ".875rem",
+                  fontFamily: "var(--sans)", fontSize: ".875rem",
                   fontWeight: actif ? 600 : 400,
-                  color: actif ? "var(--bleu)" : "var(--gris-1)",
+                  color: actif ? "var(--bleu)" : "var(--encre)",
                   textDecoration: "none",
-                  borderRadius: "var(--radius-sm)",
-                  transition: "color 150ms ease",
                   borderBottom: actif ? "2px solid var(--rouge)" : "2px solid transparent",
                   paddingBottom: "calc(.5rem - 2px)",
+                  transition: "color 150ms ease",
                 }}>
                   {item.label}
                   {hasSub && (
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M6 9l6 6 6-6" />
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none"
+                      style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 200ms ease", opacity: .5 }}>
+                      <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   )}
                 </Link>
 
-                {/* Pont invisible */}
-                {hasSub && open === item.href && (
-                  <div style={{ position: "absolute", top: "100%", left: 0, width: "100%", height: 12, zIndex: 199 }} />
+                {/* Pont invisible pour éviter le gap hover */}
+                {hasSub && isOpen && (
+                  <div style={{ position: "absolute", top: "100%", left: 0, right: 0, height: 12 }} />
                 )}
 
                 {/* Dropdown */}
-                {hasSub && open === item.href && (
+                {hasSub && isOpen && (
                   <div style={{
-                    position: "absolute", top: "calc(100% + 8px)", left: "50%",
+                    position: "absolute", top: "calc(100% + 12px)", left: "50%",
                     transform: "translateX(-50%)",
                     background: "var(--blanc)",
                     border: "1px solid var(--bordure)",
                     borderTop: "3px solid var(--rouge)",
                     borderRadius: "var(--radius-md)",
-                    boxShadow: "0 12px 36px rgba(0,0,0,.12)",
-                    minWidth: 230, zIndex: 200,
-                    padding: ".5rem",
+                    boxShadow: "var(--ombre-md)",
+                    minWidth: 220, padding: ".5rem 0",
                     animation: "fadeUp .15s ease both",
+                    zIndex: 10,
                   }}>
                     {item.children!.map((child) => {
                       const childActif = pathname === child.href;
@@ -139,18 +149,15 @@ export default function Header() {
                         <Link
                           key={child.href}
                           href={child.href}
-                          onClick={() => setOpen(null)}
                           style={{
                             display: "flex", alignItems: "center", gap: ".625rem",
-                            padding: ".625rem .875rem",
-                            borderRadius: "var(--radius-sm)",
-                            textDecoration: "none",
-                            fontFamily: "var(--sans)",
-                            fontSize: ".875rem",
+                            padding: ".625rem 1rem",
+                            fontFamily: "var(--sans)", fontSize: ".875rem",
                             color: childActif ? "var(--bleu)" : "var(--encre)",
                             fontWeight: childActif ? 600 : 400,
+                            textDecoration: "none",
                             background: childActif ? "var(--bleu-pale)" : "transparent",
-                            transition: "background 100ms ease",
+                            transition: "background 120ms ease",
                           }}
                           onMouseEnter={(e) => {
                             if (!childActif) (e.currentTarget as HTMLElement).style.background = "var(--creme-fonce)";
@@ -173,8 +180,9 @@ export default function Header() {
           })}
         </nav>
 
-        {/* ── CTA + Burger ── */}
-        <div style={{ display: "flex", alignItems: "center", gap: ".75rem", flexShrink: 0 }}>
+        {/* ── CTA + ThemeToggle + Burger ── */}
+        <div style={{ display: "flex", alignItems: "center", gap: ".625rem", flexShrink: 0 }}>
+          <ThemeToggle />
           <Link href="/communes" className="btn btn-primaire" style={{ fontSize: ".8125rem", padding: ".5rem 1.125rem" }}>
             {"Rechercher →"}
           </Link>
@@ -184,11 +192,11 @@ export default function Header() {
             className="burger"
             style={{ background: "none", border: "none", cursor: "pointer", padding: ".375rem", color: "var(--encre)", display: "none" }}
           >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
               {mobile
                 ? <><path d="M18 6 6 18" /><path d="m6 6 12 12" /></>
-                : <><line x1="3" y1="7" x2="21" y2="7" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="17" x2="21" y2="17" /></>
-              }
+                : <><line x1="3" y1="7" x2="21" y2="7" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="17" x2="21" y2="17" /></>}
             </svg>
           </button>
         </div>
@@ -196,7 +204,11 @@ export default function Header() {
 
       {/* ── Mobile menu ── */}
       {mobile && (
-        <div style={{ borderTop: "3px solid var(--rouge)", background: "var(--blanc)", padding: "1rem 1.25rem 1.5rem" }}>
+        <div style={{
+          borderTop: "3px solid var(--rouge)",
+          background: "var(--blanc)",
+          padding: "1rem 1.25rem 1.5rem",
+        }}>
           {NAV.map((item) => (
             <div key={item.href} style={{ marginBottom: ".125rem" }}>
               <Link href={item.href} onClick={() => setMobile(false)} style={{

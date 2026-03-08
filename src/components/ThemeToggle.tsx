@@ -1,122 +1,95 @@
 "use client";
-
+// src/components/ThemeToggle.tsx
 import { useEffect, useState } from "react";
 
 type Theme = "light" | "dark" | "system";
 
+function getSystemDark() {
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
+function applyTheme(theme: Theme) {
+  const html = document.documentElement;
+  html.classList.remove("dark", "light");
+  if (theme === "dark")   html.classList.add("dark");
+  if (theme === "light")  html.classList.add("light");
+  // "system" = aucune classe, la media query gère automatiquement
+  try { localStorage.setItem("bp-theme", theme); } catch {}
+}
+
 export default function ThemeToggle() {
   const [theme, setTheme] = useState<Theme>("system");
-  const [isDark, setIsDark] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  // Détecte la préférence système
-  const getSystemDark = () =>
-    window.matchMedia("(prefers-color-scheme: dark)").matches;
-
   useEffect(() => {
+    const saved = (localStorage.getItem("bp-theme") as Theme) || "system";
+    setTheme(saved);
+    applyTheme(saved);
     setMounted(true);
-    // Recharge le thème sauvegardé
-    const saved = localStorage.getItem("budget-theme") as Theme | null;
-    const initial = saved ?? "system";
-    setTheme(initial);
-    applyTheme(initial);
   }, []);
 
-  // Écoute les changements de préférence système
-  useEffect(() => {
-    if (!mounted) return;
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = () => {
-      if (theme === "system") {
-        setIsDark(mq.matches);
-        document.documentElement.removeAttribute("data-theme");
-      }
-    };
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, [theme, mounted]);
-
-const applyTheme = (t: Theme) => {
-  const root = document.documentElement;
-  if (t === "dark") {
-    root.setAttribute("data-theme", "dark");
-    setIsDark(true);
-  } else if (t === "light") {
-    root.setAttribute("data-theme", "light");
-    setIsDark(false);
-  } else {
-    // System : applique quand même dark/light selon l'OS
-    // pour que les styles CSS [data-theme] fonctionnent
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    if (prefersDark) {
-      root.setAttribute("data-theme", "dark");
-    } else {
-      root.setAttribute("data-theme", "light");
-    }
-    setIsDark(prefersDark);
-  }
-};
-
-  const cycleTheme = () => {
+  const cycle = () => {
     // Cycle : system → light → dark → system
-    const next: Theme =
-      theme === "system" ? "light" : theme === "light" ? "dark" : "system";
+    const isDark = theme === "dark" || (theme === "system" && getSystemDark());
+    const next: Theme = !isDark ? "dark" : "light";
     setTheme(next);
     applyTheme(next);
-    localStorage.setItem("budget-theme", next);
   };
 
-  if (!mounted) return null;
+  if (!mounted) return <div style={{ width: 36, height: 36 }} />;
 
-  const label =
-    theme === "system" ? "Thème système" :
-    theme === "light"  ? "Mode clair"    : "Mode sombre";
+  const effectiveDark = theme === "dark" || (theme === "system" && getSystemDark());
 
   return (
     <button
-      onClick={cycleTheme}
-      title={label}
-      aria-label={label}
+      onClick={cycle}
+      aria-label={effectiveDark ? "Passer en mode clair" : "Passer en mode sombre"}
+      title={effectiveDark ? "Mode clair" : "Mode sombre"}
       style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: ".375rem",
-        background: "rgba(255,255,255,.1)",
-        border: "1px solid rgba(255,255,255,.2)",
-        borderRadius: "99px",
-        padding: ".375rem .75rem",
+        background: "none",
+        border: "1.5px solid var(--bordure)",
+        borderRadius: "var(--radius-sm)",
         cursor: "pointer",
-        color: "rgba(255,255,255,.85)",
-        fontSize: ".8125rem",
-        fontWeight: 500,
-        transition: "background .2s ease",
+        padding: ".4rem",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "var(--encre)",
+        transition: "background 150ms ease, border-color 150ms ease",
+        flexShrink: 0,
+        width: 36,
+        height: 36,
       }}
-      onMouseEnter={(e) =>
-        ((e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,.18)")
-      }
-      onMouseLeave={(e) =>
-        ((e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,.1)")
-      }
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLButtonElement).style.background = "var(--creme-fonce)";
+        (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--gris-3)";
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLButtonElement).style.background = "none";
+        (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--bordure)";
+      }}
     >
-      {theme === "system" ? (
-        // Icône moniteur (système)
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="2" y="3" width="20" height="14" rx="2"/>
-          <path d="M8 21h8M12 17v4"/>
-        </svg>
-      ) : theme === "light" ? (
-        // Icône soleil (clair)
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      {effectiveDark ? (
+        /* Icône soleil */
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="4"/>
-          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+          <line x1="12" y1="2" x2="12" y2="5"/>
+          <line x1="12" y1="19" x2="12" y2="22"/>
+          <line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/>
+          <line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/>
+          <line x1="2" y1="12" x2="5" y2="12"/>
+          <line x1="19" y1="12" x2="22" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/>
+          <line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/>
         </svg>
       ) : (
-        // Icône lune (sombre)
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        /* Icône lune */
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
         </svg>
       )}
-      <span>{label}</span>
     </button>
   );
 }
