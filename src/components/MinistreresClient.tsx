@@ -327,7 +327,6 @@ export default function MinistreresClient() {
                         <p style={{ fontFamily: "var(--sans)", fontSize: ".8125rem", color: "var(--gris-3)", fontStyle: "italic" }}>{"Aucune donnée"}</p>
                       ) : (() => {
                         const maxH = Math.max(...detail.historique.map((h) => h.cp));
-                        const minH = Math.min(...detail.historique.map((h) => h.cp));
                         return detail.historique.map((h, i) => {
                           const prev    = i > 0 ? detail.historique[i - 1].cp : null;
                           const evolPct = prev ? ((h.cp - prev) / prev) * 100 : null;
@@ -337,7 +336,7 @@ export default function MinistreresClient() {
                               <div style={{ flex: 1, background: "var(--bleu-clair)", borderRadius: 2, height: 18, overflow: "hidden", position: "relative" }}>
                                 <div style={{
                                   height: "100%", borderRadius: 2,
-                                  width: `${maxH > minH ? ((h.cp - minH) / (maxH - minH)) * 60 + 40 : 100}%`,
+                                  width: `${maxH > 0 ? (h.cp / maxH) * 100 : 100}%`,
                                   background: h.annee === "2025" ? "var(--rouge)" : "var(--bleu)",
                                   opacity: h.annee === "2025" ? 1 : 0.7,
                                 }} />
