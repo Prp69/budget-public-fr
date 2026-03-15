@@ -168,48 +168,30 @@ function normaliserGroupeAN(slug: string): string {
   return "NI";
 }
 
-async function chargerDeputesAN(): Promise<Siege[]> {
+// Chargement via route API Next.js (proxy serveur → API officielle AN / Sénat)
+// Évite les problèmes CORS et garantit des données officielles
+async function chargerParlementaires(chambre: "AN" | "SENAT", groupes: GroupeDef[]): Promise<Siege[]> {
   const res = await fetch(
-    "https://www.nosdeputes.fr/17/deputes/json",
-    { signal: AbortSignal.timeout(8000) }
+    `/api/parlementaires/${chambre}`,
+    { signal: AbortSignal.timeout(15000) }
   );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) throw new Error(`API interne ${res.status}`);
   const json = await res.json();
-  const deputes = json?.deputes ?? [];
 
-  return deputes.map((d: { depute: { nom: string; groupe_sigle: string; nom_circo: string; departement?: string } }) => {
-    const dep    = d.depute;
-    const sigle  = normaliserGroupeAN(dep.groupe_sigle ?? "");
-    const groupe = GROUPES_AN.find(g => g.sigle === sigle);
+  if (json.error && json.parlementaires.length === 0) {
+    throw new Error(json.error);
+  }
+
+  const data: { nom: string; sigle: string; departement: string }[] = json.parlementaires ?? [];
+
+  return data.map((p) => {
+    const groupe = groupes.find(g => g.sigle === p.sigle) ?? groupes.find(g => g.sigle === "NI") ?? groupes[0];
     return {
-      nom:          dep.nom,
-      groupe:       groupe?.nom ?? "Non-inscrits",
-      sigle,
-      couleur:      groupe?.couleur ?? "#CCC",
-      departement:  dep.nom_circo ?? dep.departement,
-    };
-  });
-}
-
-async function chargerSenateursSEN(): Promise<Siege[]> {
-  const res = await fetch(
-    "https://www.nossenateurs.fr/senateurs/json",
-    { signal: AbortSignal.timeout(8000) }
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const json = await res.json();
-  const senateurs = json?.senateurs ?? [];
-
-  return senateurs.map((s: { senateur: { nom: string; groupe_sigle: string; nom_circo?: string } }) => {
-    const sen   = s.senateur;
-    const sigle = normaliserGroupeSenat(sen.groupe_sigle ?? "");
-    const groupe = GROUPES_SENAT.find(g => g.sigle === sigle);
-    return {
-      nom:         sen.nom,
-      groupe:      groupe?.nom ?? "Non-inscrits",
-      sigle,
-      couleur:     groupe?.couleur ?? "#CCC",
-      departement: sen.nom_circo,
+      nom:         p.nom,
+      groupe:      groupe.nom,
+      sigle:       groupe.sigle,
+      couleur:     groupe.couleur,
+      departement: p.departement,
     };
   });
 }
@@ -250,9 +232,7 @@ export default function Hemicycle({ chambre, titre }: Props) {
     (async () => {
       setLoading(true);
       try {
-        const data = chambre === "AN"
-          ? await chargerDeputesAN()
-          : await chargerSenateursSEN();
+        const data = await chargerParlementaires(chambre, groupes);
 
         if (data.length >= totalSieges * 0.8) {
           // Trier selon le spectre politique des groupes
