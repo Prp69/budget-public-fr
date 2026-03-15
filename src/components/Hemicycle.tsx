@@ -185,7 +185,12 @@ async function chargerParlementaires(chambre: "AN" | "SENAT", groupes: GroupeDef
   const data: { nom: string; sigle: string; departement: string }[] = json.parlementaires ?? [];
 
   return data.map((p) => {
-    const groupe = groupes.find(g => g.sigle === p.sigle) ?? groupes.find(g => g.sigle === "NI") ?? groupes[0];
+    // Chercher d'abord exact, puis insensible à la casse
+    const groupe =
+      groupes.find(g => g.sigle === p.sigle) ??
+      groupes.find(g => g.sigle.toUpperCase() === p.sigle.toUpperCase()) ??
+      groupes.find(g => g.sigle === "NI") ??
+      groupes[groupes.length - 1];
     return {
       nom:         p.nom,
       groupe:      groupe.nom,

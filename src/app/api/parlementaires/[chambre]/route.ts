@@ -45,21 +45,24 @@ function parseLine(line: string): string[] {
 
 // ─── Mapping groupe AN (sigle CSV → sigle interne) ───────────────────────────
 
+// Sigles exacts tels qu'ils apparaissent dans le CSV officiel AN
+// Source : liste_deputes_libre_office.csv — colonne "Groupe politique (abrégé)"
 const SIGLE_AN: Record<string, string> = {
-  "GDR":     "GDR",
-  "LFI-NFP": "LFI",
+  "GDR":     "GDR",   // Gauche Démocrate et Républicaine
+  "LFI-NFP": "LFI",   // La France insoumise – Nouveau Front Populaire
   "LFI":     "LFI",
+  "EcoS":    "EcoS",  // Écologiste et Social (casse exacte du CSV)
   "ECOS":    "EcoS",
-  "SOC":     "SOC",
-  "LIOT":    "LIOT",
-  "EPR":     "EPR",
+  "SOC":     "SOC",   // Socialistes et apparentés
+  "LIOT":    "LIOT",  // Libertés, Indépendants, Outre-mer et Territoires
+  "EPR":     "EPR",   // Ensemble pour la République
+  "Dem":     "DEM",   // Les Démocrates (casse exacte : D majuscule, em minuscule)
   "DEM":     "DEM",
-  "Dem":     "DEM",
-  "HOR":     "HOR",
-  "DR":      "DR",
-  "UDR":     "UDR",
-  "RN":      "RN",
-  "NI":      "NI",
+  "HOR":     "HOR",   // Horizons & Indépendants
+  "DR":      "DR",    // Droite Républicaine
+  "UDR":     "UDR",   // Union des droites pour la République
+  "RN":      "RN",    // Rassemblement National
+  "NI":      "NI",    // Non-inscrits
 };
 
 // ─── Mapping groupe Sénat (libellé CSV → sigle interne) ─────────────────────
@@ -105,8 +108,15 @@ export async function GET(
           departement: r["Département"] ?? "",
         }));
 
+      // Log diagnostic
+      const parGroupe = parlementaires.reduce((acc, p) => {
+        acc[p.sigle] = (acc[p.sigle] ?? 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      console.log(`[parlementaires/AN] ${parlementaires.length} députés:`, parGroupe);
+
       return NextResponse.json(
-        { parlementaires, total: parlementaires.length },
+        { parlementaires, total: parlementaires.length, debug: parGroupe },
         { headers: { "Cache-Control": "public, max-age=86400" } }
       );
     }
