@@ -66,64 +66,70 @@ interface Siege {
 function genererSieges(groupes: GroupeDef[], total: number): { x: number; y: number; siege: Siege }[] {
   const CX = 500, CY = 430;
   const N_RANGEES = 8;
-  // Rayons intérieur → extérieur
-  const R_INT = 155, R_EXT = 390;
+  const R_INT = 160, R_EXT = 385;
+  const MARGE = 5 * Math.PI / 180; // 5° de marge de chaque côté
 
-  // Calculer sièges par rangée (proportionnel à la longueur de l'arc)
+  // Rayons des 8 rangées concentriques
   const rayons = Array.from({ length: N_RANGEES }, (_, i) =>
     R_INT + (i / (N_RANGEES - 1)) * (R_EXT - R_INT)
   );
-  const totalPerim = rayons.reduce((s, r) => s + r, 0);
-  const parRangee  = rayons.map(r => Math.round((r / totalPerim) * total));
 
-  // Ajuster le total
+  // Nombre de sièges par rangée proportionnel à la circonférence (rayon × π)
+  const totalArc = rayons.reduce((s, r) => s + r, 0);
+  const parRangee = rayons.map(r => Math.round((r / totalArc) * total));
+
+  // Ajustement pour que le total soit exact
   let diff = total - parRangee.reduce((s, n) => s + n, 0);
   for (let i = N_RANGEES - 1; diff !== 0; i = (i - 1 + N_RANGEES) % N_RANGEES) {
     parRangee[i] += diff > 0 ? 1 : -1;
     diff += diff > 0 ? -1 : 1;
   }
 
-  // Créer la liste de sièges ordonnés gauche→droite (selon spectre politique)
+  // ─── Clé de l'algorithme : remplissage colonne par colonne (gauche→droite) ───
+  // On calcule un "index angulaire normalisé" [0,1] pour chaque siège dans sa rangée,
+  // puis on trie TOUS les sièges par cet index pour obtenir l'ordre gauche→droite global.
+
+  interface PosTemp { angle: number; rangee: number; indexDansRangee: number; }
+  const positionsTemp: PosTemp[] = [];
+
+  for (let r = 0; r < N_RANGEES; r++) {
+    const n = parRangee[r];
+    for (let s = 0; s < n; s++) {
+      // angle va de π-MARGE (gauche) à MARGE (droite)
+      const angle = (Math.PI - MARGE) - (Math.PI - 2 * MARGE) * (s / (n > 1 ? n - 1 : 1));
+      positionsTemp.push({ angle, rangee: r, indexDansRangee: s });
+    }
+  }
+
+  // Trier par angle décroissant = gauche (angle élevé) → droite (angle faible)
+  // À angle égal (même colonne), trier par rangée croissante = intérieur → extérieur
+  positionsTemp.sort((a, b) => {
+    const da = Math.abs(b.angle - a.angle);
+    if (da > 0.001) return b.angle - a.angle; // gauche d'abord
+    return a.rangee - b.rangee; // intérieur d'abord
+  });
+
+  // Créer la liste ordonnée des sièges (gauche→droite selon spectre)
   const siegesOrdres: Siege[] = [];
-  // Trier groupes par spectre
   const groupesTries = [...groupes].sort((a, b) => a.spectre - b.spectre);
   for (const g of groupesTries) {
     for (let i = 0; i < g.sieges; i++) {
       siegesOrdres.push({
         nom: `${g.nom} — siège ${i + 1}`,
-        groupe: g.nom,
-        sigle: g.sigle,
-        couleur: g.couleur,
+        groupe: g.nom, sigle: g.sigle, couleur: g.couleur,
       });
     }
   }
 
-  // Mapper les sièges sur les positions
-  // Ordre de remplissage : rangée intérieure d'abord, gauche→droite dans chaque rangée
-  const positions: { x: number; y: number; siege: Siege }[] = [];
-  let siegeIdx = 0;
-
-  // On remplit rangée par rangée (intérieur → extérieur)
-  // Dans chaque rangée, les sièges vont de gauche (angle ~175°) à droite (angle ~5°)
-  const MARGE_ANGLE = 4; // degrés de marge de chaque côté
-
-  for (let r = 0; r < N_RANGEES; r++) {
-    const n = parRangee[r];
-    const R = rayons[r];
-    for (let s = 0; s < n; s++) {
-      const angle = Math.PI * (1 - MARGE_ANGLE / 180) - (Math.PI * (1 - 2 * MARGE_ANGLE / 180)) * (s / (n > 1 ? n - 1 : 1));
-      const x = CX + R * Math.cos(angle);
-      const y = CY - R * Math.sin(angle);
-      positions.push({
-        x,
-        y,
-        siege: siegesOrdres[siegeIdx] ?? { nom: "?", groupe: "NI", sigle: "NI", couleur: "#CCC" },
-      });
-      siegeIdx++;
-    }
-  }
-
-  return positions;
+  // Associer chaque position triée à un siège
+  return positionsTemp.map((p, i) => {
+    const R = rayons[p.rangee];
+    return {
+      x: CX + R * Math.cos(p.angle),
+      y: CY - R * Math.sin(p.angle),
+      siege: siegesOrdres[i] ?? { nom: "?", groupe: "NI", sigle: "NI", couleur: "#CCC" },
+    };
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════
