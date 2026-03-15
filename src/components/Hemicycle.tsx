@@ -364,8 +364,8 @@ export default function Hemicycle({ chambre, titre }: Props) {
         </svg>
 
         {/* Tooltip */}
-        {tooltip.visible && tooltip.siege && (() => {
-          const tt   = tooltip;
+        {tooltip.visible && tooltip.siege !== null && (() => {
+          const tt = tooltip as { visible: boolean; x: number; y: number; siege: Siege };
           const left = Math.min(tt.x + 14, 560);
           const top  = Math.max(tt.y - 70, 0);
           return (
