@@ -33,6 +33,7 @@ interface PointHistorique {
 }
 
 interface DetailMinistere {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   titres:      TitreDonnee[];
   programmes:  Programme[];
   historique:  PointHistorique[];
@@ -119,12 +120,16 @@ export default function MinistreresClient() {
     setLoading(true);
     try {
       const res = await fetch(`/api/ministeres/${code}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const body = await res.text().catch(() => "(no body)");
+        throw new Error(`HTTP ${res.status} — ${body.slice(0, 300)}`);
+      }
       const data: DetailMinistere = await res.json();
       CACHE[code] = { data, ts: Date.now() };
       setDetail(data);
-    } catch {
-      setError("Données indisponibles momentanément. L'API data.economie.gouv.fr peut être en maintenance.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -236,7 +241,21 @@ export default function MinistreresClient() {
                   </div>
                 )}
 
-                {detail && !loading && (
+                {detail && !loading && (detail.titres.length === 0 && detail.programmes.length === 0 && detail.historique.length === 0) && (
+                  <div style={{ fontFamily: "var(--sans)", fontSize: ".875rem", color: "var(--gris-2)", padding: ".75rem", background: "var(--blanc)", borderRadius: "var(--radius-sm)" }}>
+                    {"Données non disponibles pour ce ministère dans le PLF 2025."}
+                    {detail._debug && (
+                      <details style={{ marginTop: ".5rem" }}>
+                        <summary style={{ cursor: "pointer", fontSize: ".75rem", color: "var(--gris-3)" }}>{"Debug colonnes"}</summary>
+                        <pre style={{ fontSize: ".7rem", color: "var(--gris-3)", marginTop: ".25rem", whiteSpace: "pre-wrap" }}>
+                          {JSON.stringify(detail._debug, null, 2)}
+                        </pre>
+                      </details>
+                    )}
+                  </div>
+                )}
+
+                {detail && !loading && (detail.titres.length > 0 || detail.programmes.length > 0 || detail.historique.length > 0) && (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1.5rem" }}>
 
                     {/* ── Col 1 : Ventilation par titre ── */}

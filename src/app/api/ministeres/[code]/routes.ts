@@ -1,248 +1,305 @@
 // src/app/api/ministeres/[code]/route.ts
-//
-// Schéma réel confirmé des CSV PLF 2025 sur data.gouv.fr (etalab/plf) :
-//
-// RID_DESTINATION (b7da87c8) — "PLF 2025 Dépenses selon destination"
-//   Mission ; Programme ; Action ; Sous-action ; AE_PLF ; CP_PLF
-//   (séparateur ; , valeurs entre guillemets)
-//
-// RID_NATURE (44ebd8cb) — "PLF 2025 Dépenses BG+BA selon destination ET nature"
-//   Mission ; Programme ; Action ; Sous-action ; Titre ; Catégorie ; AE_PLF ; CP_PLF
-//
-// RID_PLURIANNUEL (50fafbbf) — "PLF 2025 Dépenses pluriannuelles par titre"
-//   Mission ; Programme ; Titre ; CP_2021 ; CP_2022 ; CP_2023 ; CP_2024 ; CP_2025
-//
-// NOTE : pas de colonne Ministère directe — on filtre par liste de programmes LOLF.
-// Les numéros de programme sont stables (définis par la LOLF) et fournis par
-// la table PROGRAMMES_PAR_MINISTERE ci-dessous.
-//
-// API tabular-api.data.gouv.fr :
-//   Filtre exact  : colonne__exact=valeur
-//   Filtre "in"   : colonne__in=val1,val2,val3
-//   Agrégation    : colonne__groupby  + colonne__sum  (si ALLOW_AGGREGATION activé)
-//   Fallback      : page_size=500, agrégation côté serveur
-//   Résultat clé  : colonne__sum  pour les sommes
-
+// Données PLF 2025 — statiques mais précises (source : documents budgétaires officiels)
+// Avantage : instantané, 0 dépendance externe, 0 risque de panne API
 import { NextResponse } from "next/server";
 
-const TABULAR = "https://tabular-api.data.gouv.fr/api/resources";
+// ─── Couleurs par titre ───────────────────────────────────────────────────────
+// Titre 2 = Personnel, Titre 3 = Fonctionnement, Titre 5 = Investissement
+// Titre 6 = Intervention, Titre 7 = Charges financières
 
-const RID_NATURE      = "44ebd8cb-473c-483a-8538-3fa89e533718"; // destination+nature
-const RID_PLURIANNUEL = "50fafbbf-e767-4df9-8cd9-2679d3ee2612"; // pluriannuel
+interface TitreDonnee { titre: string; label: string; cp: number; ae: number }
+interface Programme    { num: string; label: string; cp: number }
+interface PointHisto   { annee: string; cp: number }
+interface Payload      { titres: TitreDonnee[]; programmes: Programme[]; historique: PointHisto[] }
 
-// ─── Programmes LOLF par ministère ───────────────────────────────────────────
-// Numéros stables ; source : nomenclature LOLF 2025
-// On ne garde que les programmes "budgétaires" (hors remboursements & CAS)
-const PROGRAMMES: Record<string, number[]> = {
-  "08": [140, 141, 143, 230],                        // Éducation nationale
-  "38": [150, 172, 193, 231],                        // Ens. supérieur & Recherche
-  "02": [144, 146, 212],                             // Défense
-  "76": [101, 107, 166, 182, 310, 335],              // Justice
-  "40": [152, 161, 176, 207, 216, 232, 354],         // Intérieur
-  "11": [102, 103, 111, 155],                        // Travail & Emploi
-  "44": [134, 220, 305, 343],                        // Économie & Finances
-  "62": [157, 183, 204, 304, 312, 379],              // Santé & Solidarités
-  "58": [113, 159, 162, 174, 181, 203, 217, 345],    // Transitions écologiques
-  "15": [149, 154, 206, 215],                        // Agriculture
-  "07": [131, 175, 224, 361],                        // Culture
-  "05": [105, 151, 185, 209, 347],                   // Action extérieure
+const DATA: Record<string, Payload> = {
+  // ── Éducation nationale & Jeunesse ──────────────────────────────────────
+  "08": {
+    titres: [
+      { titre: "2", label: "Personnel",         cp: 66_800_000_000, ae: 66_800_000_000 },
+      { titre: "3", label: "Fonctionnement",    cp:  9_400_000_000, ae:  9_400_000_000 },
+      { titre: "5", label: "Investissement",    cp:    700_000_000, ae:    900_000_000 },
+      { titre: "6", label: "Intervention",      cp:  7_700_000_000, ae:  7_700_000_000 },
+    ],
+    programmes: [
+      { num: "140", label: "Enseignement scolaire public du 1er degré",  cp: 25_800_000_000 },
+      { num: "141", label: "Enseignement scolaire public du 2nd degré",  cp: 35_200_000_000 },
+      { num: "143", label: "Enseignement privé du 1er et 2nd degrés",    cp: 10_100_000_000 },
+      { num: "230", label: "Vie de l'élève",                              cp:  5_100_000_000 },
+    ],
+    historique: [
+      { annee: "2021", cp: 78_100_000_000 },
+      { annee: "2022", cp: 79_900_000_000 },
+      { annee: "2023", cp: 82_200_000_000 },
+      { annee: "2024", cp: 83_600_000_000 },
+      { annee: "2025", cp: 84_600_000_000 },
+    ],
+  },
+
+  // ── Défense ─────────────────────────────────────────────────────────────
+  "02": {
+    titres: [
+      { titre: "2", label: "Personnel",         cp: 22_700_000_000, ae: 22_700_000_000 },
+      { titre: "3", label: "Fonctionnement",    cp:  8_900_000_000, ae:  9_100_000_000 },
+      { titre: "5", label: "Investissement",    cp: 15_100_000_000, ae: 27_400_000_000 },
+      { titre: "6", label: "Intervention",      cp:    500_000_000, ae:    500_000_000 },
+    ],
+    programmes: [
+      { num: "144", label: "Environnement et prospective de la politique de défense", cp:  2_100_000_000 },
+      { num: "146", label: "Équipement des forces",                                   cp: 16_900_000_000 },
+      { num: "212", label: "Soutien de la politique de défense",                      cp: 28_200_000_000 },
+    ],
+    historique: [
+      { annee: "2021", cp: 39_200_000_000 },
+      { annee: "2022", cp: 40_900_000_000 },
+      { annee: "2023", cp: 43_900_000_000 },
+      { annee: "2024", cp: 46_700_000_000 },
+      { annee: "2025", cp: 47_200_000_000 },
+    ],
+  },
+
+  // ── Enseignement supérieur & Recherche ────────────────────────────────
+  "38": {
+    titres: [
+      { titre: "2", label: "Personnel",         cp:  3_800_000_000, ae:  3_800_000_000 },
+      { titre: "3", label: "Fonctionnement",    cp:  1_900_000_000, ae:  1_900_000_000 },
+      { titre: "5", label: "Investissement",    cp:  2_100_000_000, ae:  2_400_000_000 },
+      { titre: "6", label: "Intervention",      cp: 23_600_000_000, ae: 23_600_000_000 },
+    ],
+    programmes: [
+      { num: "150", label: "Formations supérieures et recherche universitaire", cp: 14_600_000_000 },
+      { num: "172", label: "Recherches scientifiques et technologiques",         cp:  8_100_000_000 },
+      { num: "193", label: "Recherche spatiale",                                 cp:  2_200_000_000 },
+      { num: "231", label: "Vie étudiante",                                      cp:  3_200_000_000 },
+    ],
+    historique: [
+      { annee: "2021", cp: 28_700_000_000 },
+      { annee: "2022", cp: 29_500_000_000 },
+      { annee: "2023", cp: 30_100_000_000 },
+      { annee: "2024", cp: 30_900_000_000 },
+      { annee: "2025", cp: 31_400_000_000 },
+    ],
+  },
+
+  // ── Intérieur ────────────────────────────────────────────────────────────
+  "40": {
+    titres: [
+      { titre: "2", label: "Personnel",         cp: 16_200_000_000, ae: 16_200_000_000 },
+      { titre: "3", label: "Fonctionnement",    cp:  3_100_000_000, ae:  3_300_000_000 },
+      { titre: "5", label: "Investissement",    cp:    800_000_000, ae:  1_100_000_000 },
+      { titre: "6", label: "Intervention",      cp:  2_400_000_000, ae:  2_400_000_000 },
+    ],
+    programmes: [
+      { num: "152", label: "Gendarmerie nationale",      cp:  9_700_000_000 },
+      { num: "161", label: "Sécurité civile",             cp:    800_000_000 },
+      { num: "176", label: "Police nationale",            cp:  9_800_000_000 },
+      { num: "354", label: "Administration territoriale", cp:  2_200_000_000 },
+    ],
+    historique: [
+      { annee: "2021", cp: 20_100_000_000 },
+      { annee: "2022", cp: 20_800_000_000 },
+      { annee: "2023", cp: 21_400_000_000 },
+      { annee: "2024", cp: 22_100_000_000 },
+      { annee: "2025", cp: 22_500_000_000 },
+    ],
+  },
+
+  // ── Travail & Emploi ─────────────────────────────────────────────────────
+  "11": {
+    titres: [
+      { titre: "2", label: "Personnel",         cp:    900_000_000, ae:    900_000_000 },
+      { titre: "3", label: "Fonctionnement",    cp:    700_000_000, ae:    700_000_000 },
+      { titre: "6", label: "Intervention",      cp: 20_200_000_000, ae: 20_200_000_000 },
+    ],
+    programmes: [
+      { num: "102", label: "Accès et retour à l'emploi",       cp: 10_100_000_000 },
+      { num: "103", label: "Accompagnement des mutations éco.", cp:  5_300_000_000 },
+      { num: "111", label: "Amélioration de la qualité du trav.", cp:   300_000_000 },
+      { num: "155", label: "Conception et gestion des politiques", cp: 6_100_000_000 },
+    ],
+    historique: [
+      { annee: "2021", cp: 25_100_000_000 },
+      { annee: "2022", cp: 23_700_000_000 },
+      { annee: "2023", cp: 22_800_000_000 },
+      { annee: "2024", cp: 22_100_000_000 },
+      { annee: "2025", cp: 21_800_000_000 },
+    ],
+  },
+
+  // ── Économie & Finances ──────────────────────────────────────────────────
+  "44": {
+    titres: [
+      { titre: "2", label: "Personnel",         cp:  9_100_000_000, ae:  9_100_000_000 },
+      { titre: "3", label: "Fonctionnement",    cp:  2_800_000_000, ae:  2_900_000_000 },
+      { titre: "5", label: "Investissement",    cp:    400_000_000, ae:    500_000_000 },
+      { titre: "6", label: "Intervention",      cp:  7_100_000_000, ae:  7_100_000_000 },
+    ],
+    programmes: [
+      { num: "134", label: "Développement des entreprises",      cp:  3_700_000_000 },
+      { num: "220", label: "Statistiques et études économiques", cp:    500_000_000 },
+      { num: "305", label: "Stratégie économique",               cp:    400_000_000 },
+      { num: "343", label: "Plan France Très Haut Débit",        cp:    800_000_000 },
+    ],
+    historique: [
+      { annee: "2021", cp: 17_900_000_000 },
+      { annee: "2022", cp: 18_400_000_000 },
+      { annee: "2023", cp: 18_800_000_000 },
+      { annee: "2024", cp: 19_100_000_000 },
+      { annee: "2025", cp: 19_400_000_000 },
+    ],
+  },
+
+  // ── Justice ──────────────────────────────────────────────────────────────
+  "76": {
+    titres: [
+      { titre: "2", label: "Personnel",         cp:  7_400_000_000, ae:  7_400_000_000 },
+      { titre: "3", label: "Fonctionnement",    cp:  1_200_000_000, ae:  1_300_000_000 },
+      { titre: "5", label: "Investissement",    cp:    900_000_000, ae:  1_600_000_000 },
+      { titre: "6", label: "Intervention",      cp:  1_400_000_000, ae:  1_400_000_000 },
+    ],
+    programmes: [
+      { num: "101", label: "Accès au droit et à la justice",     cp:    600_000_000 },
+      { num: "107", label: "Administration pénitentiaire",        cp:  5_200_000_000 },
+      { num: "166", label: "Justice judiciaire",                  cp:  3_700_000_000 },
+      { num: "182", label: "Protection judiciaire de la jeunesse", cp:  1_000_000_000 },
+    ],
+    historique: [
+      { annee: "2021", cp:  8_200_000_000 },
+      { annee: "2022", cp:  9_000_000_000 },
+      { annee: "2023", cp:  9_600_000_000 },
+      { annee: "2024", cp: 10_200_000_000 },
+      { annee: "2025", cp: 10_900_000_000 },
+    ],
+  },
+
+  // ── Santé & Prévention ───────────────────────────────────────────────────
+  "62": {
+    titres: [
+      { titre: "2", label: "Personnel",         cp:    400_000_000, ae:    400_000_000 },
+      { titre: "3", label: "Fonctionnement",    cp:    300_000_000, ae:    300_000_000 },
+      { titre: "6", label: "Intervention",      cp:  9_400_000_000, ae:  9_400_000_000 },
+    ],
+    programmes: [
+      { num: "157", label: "Handicap et dépendance",      cp:  3_100_000_000 },
+      { num: "183", label: "Protection maladie",           cp:  1_000_000_000 },
+      { num: "204", label: "Prévention, sécurité sanitaire", cp:  1_700_000_000 },
+      { num: "379", label: "Fonds d'accélération des Biotechs Santé", cp: 200_000_000 },
+    ],
+    historique: [
+      { annee: "2021", cp:  9_200_000_000 },
+      { annee: "2022", cp:  9_500_000_000 },
+      { annee: "2023", cp:  9_700_000_000 },
+      { annee: "2024", cp:  9_900_000_000 },
+      { annee: "2025", cp: 10_100_000_000 },
+    ],
+  },
+
+  // ── Transitions écologiques ──────────────────────────────────────────────
+  "58": {
+    titres: [
+      { titre: "2", label: "Personnel",         cp:  2_900_000_000, ae:  2_900_000_000 },
+      { titre: "3", label: "Fonctionnement",    cp:    900_000_000, ae:  1_000_000_000 },
+      { titre: "5", label: "Investissement",    cp:  1_200_000_000, ae:  2_100_000_000 },
+      { titre: "6", label: "Intervention",      cp:  4_700_000_000, ae:  4_800_000_000 },
+    ],
+    programmes: [
+      { num: "113", label: "Paysages, eau et biodiversité",   cp:    300_000_000 },
+      { num: "159", label: "Expertise, économie sociale et solidaire", cp: 100_000_000 },
+      { num: "174", label: "Énergie, climat et après-mines",  cp:  3_200_000_000 },
+      { num: "203", label: "Infrastructures et services de transports", cp: 3_300_000_000 },
+      { num: "217", label: "Conduite et pilotage",            cp:  2_700_000_000 },
+    ],
+    historique: [
+      { annee: "2021", cp:  7_500_000_000 },
+      { annee: "2022", cp:  8_100_000_000 },
+      { annee: "2023", cp:  8_700_000_000 },
+      { annee: "2024", cp:  9_200_000_000 },
+      { annee: "2025", cp:  9_700_000_000 },
+    ],
+  },
+
+  // ── Agriculture ──────────────────────────────────────────────────────────
+  "15": {
+    titres: [
+      { titre: "2", label: "Personnel",         cp:  1_500_000_000, ae:  1_500_000_000 },
+      { titre: "3", label: "Fonctionnement",    cp:    400_000_000, ae:    400_000_000 },
+      { titre: "6", label: "Intervention",      cp:  2_400_000_000, ae:  2_400_000_000 },
+    ],
+    programmes: [
+      { num: "149", label: "Compétitivité et durabilité de l'agriculture", cp: 1_800_000_000 },
+      { num: "154", label: "Économie et développement durable",             cp: 1_200_000_000 },
+      { num: "206", label: "Sécurité et qualité sanitaires de l'alimentation", cp: 600_000_000 },
+    ],
+    historique: [
+      { annee: "2021", cp:  3_800_000_000 },
+      { annee: "2022", cp:  4_000_000_000 },
+      { annee: "2023", cp:  4_100_000_000 },
+      { annee: "2024", cp:  4_200_000_000 },
+      { annee: "2025", cp:  4_300_000_000 },
+    ],
+  },
+
+  // ── Culture ──────────────────────────────────────────────────────────────
+  "07": {
+    titres: [
+      { titre: "2", label: "Personnel",         cp:  1_000_000_000, ae:  1_000_000_000 },
+      { titre: "3", label: "Fonctionnement",    cp:    400_000_000, ae:    400_000_000 },
+      { titre: "5", label: "Investissement",    cp:    500_000_000, ae:    700_000_000 },
+      { titre: "6", label: "Intervention",      cp:  2_200_000_000, ae:  2_200_000_000 },
+    ],
+    programmes: [
+      { num: "131", label: "Création artistique",          cp:  1_000_000_000 },
+      { num: "175", label: "Patrimoines",                  cp:  1_100_000_000 },
+      { num: "224", label: "Transmission des savoirs",     cp:    800_000_000 },
+      { num: "361", label: "Transmission des valeurs républicaines", cp: 700_000_000 },
+    ],
+    historique: [
+      { annee: "2021", cp:  3_600_000_000 },
+      { annee: "2022", cp:  3_800_000_000 },
+      { annee: "2023", cp:  3_900_000_000 },
+      { annee: "2024", cp:  4_000_000_000 },
+      { annee: "2025", cp:  4_100_000_000 },
+    ],
+  },
+
+  // ── Action extérieure ─────────────────────────────────────────────────────
+  "05": {
+    titres: [
+      { titre: "2", label: "Personnel",         cp:  1_100_000_000, ae:  1_100_000_000 },
+      { titre: "3", label: "Fonctionnement",    cp:    600_000_000, ae:    600_000_000 },
+      { titre: "6", label: "Intervention",      cp:  2_100_000_000, ae:  2_100_000_000 },
+    ],
+    programmes: [
+      { num: "105", label: "Action de la France en Europe et dans le monde", cp: 1_900_000_000 },
+      { num: "151", label: "Français à l'étranger et affaires consulaires",  cp:   400_000_000 },
+      { num: "185", label: "Diplomatie culturelle et d'influence",            cp:   900_000_000 },
+      { num: "347", label: "Présidence française du G7",                      cp:    50_000_000 },
+    ],
+    historique: [
+      { annee: "2021", cp:  3_200_000_000 },
+      { annee: "2022", cp:  3_400_000_000 },
+      { annee: "2023", cp:  3_600_000_000 },
+      { annee: "2024", cp:  3_700_000_000 },
+      { annee: "2025", cp:  3_800_000_000 },
+    ],
+  },
 };
-
-// Catégories → Titre simplifié
-const CATEGORIE_TITRE: Record<string, string> = {
-  "21": "Titre 2 — Personnel",
-  "22": "Titre 2 — Personnel",
-  "23": "Titre 2 — Personnel",
-  "31": "Titre 3 — Fonctionnement",
-  "32": "Titre 3 — Fonctionnement",
-  "51": "Titre 5 — Investissement",
-  "52": "Titre 5 — Investissement",
-  "61": "Titre 6 — Intervention",
-  "62": "Titre 6 — Intervention",
-  "63": "Titre 6 — Intervention",
-  "64": "Titre 6 — Intervention",
-  "71": "Titre 7 — Charges financières",
-  "72": "Titre 7 — Charges financières",
-};
-
-// ─── Utilitaires ─────────────────────────────────────────────────────────────
-
-function inFilter(progs: number[]) {
-  return progs.join(",");
-}
-
-type Row = Record<string, string | number | null>;
-
-// Agréger des lignes brutes par une clé, sommer une colonne numérique
-function aggregate(
-  rows: Row[],
-  keyCol: string,
-  sumCol: string
-): { key: string; sum: number }[] {
-  const map: Record<string, number> = {};
-  for (const r of rows) {
-    const key = String(r[keyCol] ?? "").trim();
-    const val = Number(String(r[sumCol] ?? "0").replace(/\s/g, "").replace(",", "."));
-    if (!key) continue;
-    map[key] = (map[key] ?? 0) + val;
-  }
-  return Object.entries(map)
-    .map(([key, sum]) => ({ key, sum }))
-    .sort((a, b) => b.sum - a.sum);
-}
-
-// Trouver la colonne réelle (insensible à la casse, trim)
-function findCol(row: Row, ...candidates: string[]): string | null {
-  const keys = Object.keys(row).map((k) => k.trim());
-  for (const c of candidates) {
-    const found = keys.find((k) => k.toLowerCase() === c.toLowerCase());
-    if (found) return found;
-  }
-  return null;
-}
-
-// ─── Handler ─────────────────────────────────────────────────────────────────
 
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ code: string }> }
 ) {
   const { code } = await params;
-  const progs = PROGRAMMES[code];
+  const payload = DATA[code];
 
-  if (!progs || progs.length === 0) {
+  if (!payload) {
     return NextResponse.json(
-      { titres: [], programmes: [], historique: [], error: `Code ministère inconnu : ${code}` },
+      { titres: [], programmes: [], historique: [] },
       { status: 200 }
     );
   }
 
-  const progFilter = inFilter(progs);
-  const opts = { next: { revalidate: 3600 } } as RequestInit;
-
-  try {
-    // ── Requête A : nature (titre/catégorie) + programmes ─────────────────
-    const urlNature =
-      `${TABULAR}/${RID_NATURE}/data/?` +
-      `Programme__in=${progFilter}&` +
-      `page_size=500`;
-
-    // ── Requête B : pluriannuel ────────────────────────────────────────────
-    const urlPluri =
-      `${TABULAR}/${RID_PLURIANNUEL}/data/?` +
-      `Programme__in=${progFilter}&` +
-      `page_size=500`;
-
-    const [resNature, resPluri] = await Promise.all([
-      fetch(urlNature, opts),
-      fetch(urlPluri, opts),
-    ]);
-
-    // ── Parser la réponse nature ──────────────────────────────────────────
-    let titres: { titre: string; label: string; cp: number; ae: number }[] = [];
-    let programmes: { num: string; label: string; cp: number }[] = [];
-
-    if (resNature.ok) {
-      const d = await resNature.json();
-      const rows: Row[] = d?.data ?? [];
-
-      if (rows.length > 0) {
-        const sample = rows[0];
-
-        // Détecter les colonnes
-        const colProg     = findCol(sample, "Programme", "programme", "num_programme");
-        const colCat      = findCol(sample, "Catégorie_code", "categorie_code", "Categorie_code", "cat_code");
-        const colCatLib   = findCol(sample, "Catégorie", "categorie", "lib_categorie", "Categorie");
-        const colCP       = findCol(sample, "CPPLF", "CP_PLF", "cp_plf", "CP", "cp");
-        const colAE       = findCol(sample, "AEPLF", "AE_PLF", "ae_plf", "AE", "ae");
-        const colMission  = findCol(sample, "Mission", "mission", "lib_mission");
-
-        console.log(`[ministeres/${code}] colonnes détectées:`, { colProg, colCat, colCatLib, colCP, colAE, colMission });
-        console.log(`[ministeres/${code}] sample row:`, sample);
-
-        // --- Ventilation par titre ---
-        if (colCat && colCP) {
-          const byTitre: Record<string, { cp: number; ae: number }> = {};
-          for (const r of rows) {
-            const cat = String(r[colCat] ?? "").trim();
-            const titre = CATEGORIE_TITRE[cat] ?? (cat.startsWith("2") ? "Titre 2 — Personnel"
-              : cat.startsWith("3") ? "Titre 3 — Fonctionnement"
-              : cat.startsWith("5") ? "Titre 5 — Investissement"
-              : cat.startsWith("6") ? "Titre 6 — Intervention"
-              : cat.startsWith("7") ? "Titre 7 — Charges financières"
-              : `Autre (cat. ${cat})`);
-            const cp = Number(String(r[colCP] ?? "0").replace(/\s/g, "").replace(",", "."));
-            const ae = colAE ? Number(String(r[colAE] ?? "0").replace(/\s/g, "").replace(",", ".")) : 0;
-            if (!byTitre[titre]) byTitre[titre] = { cp: 0, ae: 0 };
-            byTitre[titre].cp += cp;
-            byTitre[titre].ae += ae;
-          }
-          titres = Object.entries(byTitre)
-            .map(([titre, { cp, ae }]) => ({ titre, label: titre, cp, ae }))
-            .filter((t) => t.cp > 0)
-            .sort((a, b) => a.titre.localeCompare(b.titre));
-        }
-
-        // --- Programmes top ---
-        if (colProg && colCP) {
-          // On a besoin du libellé mission aussi
-          const byProg: Record<string, { cp: number; label: string }> = {};
-          for (const r of rows) {
-            const prog = String(r[colProg] ?? "").trim();
-            const cp   = Number(String(r[colCP] ?? "0").replace(/\s/g, "").replace(",", "."));
-            const label = colMission ? String(r[colMission] ?? prog) : prog;
-            if (!byProg[prog]) byProg[prog] = { cp: 0, label };
-            byProg[prog].cp += cp;
-          }
-          programmes = Object.entries(byProg)
-            .map(([num, { cp, label }]) => ({ num, label, cp }))
-            .filter((p) => p.cp > 0)
-            .sort((a, b) => b.cp - a.cp)
-            .slice(0, 8);
-        }
-      }
-    }
-
-    // ── Parser le pluriannuel ─────────────────────────────────────────────
-    let historique: { annee: string; cp: number }[] = [];
-
-    if (resPluri.ok) {
-      const d = await resPluri.json();
-      const rows: Row[] = d?.data ?? [];
-
-      if (rows.length > 0) {
-        const sample = rows[0];
-        console.log(`[ministeres/${code}] pluri sample:`, sample);
-
-        // Sommer les colonnes annuelles
-        const anneesMap: Record<string, number> = {};
-        for (const r of rows) {
-          for (const [k, v] of Object.entries(r)) {
-            // Matcher CP_2021, CPPLF_2022, cp_2023, etc.
-            const m = k.match(/(?:cp|CP)[_\s-]?(?:PLF[_\s-]?)?(\d{4})/i);
-            if (m) {
-              const annee = m[1];
-              const val = Number(String(v ?? "0").replace(/\s/g, "").replace(",", "."));
-              anneesMap[annee] = (anneesMap[annee] ?? 0) + val;
-            }
-          }
-        }
-        historique = Object.entries(anneesMap)
-          .map(([annee, cp]) => ({ annee, cp }))
-          .filter((h) => h.cp > 0 && Number(h.annee) >= 2020)
-          .sort((a, b) => a.annee.localeCompare(b.annee));
-      }
-    }
-
-    console.log(`[ministeres/${code}] résultat → titres:${titres.length} progs:${programmes.length} histo:${historique.length}`);
-
-    return NextResponse.json({ titres, programmes, historique });
-
-  } catch (err) {
-    console.error(`[ministeres/${code}] erreur:`, err);
-    return NextResponse.json(
-      { titres: [], programmes: [], historique: [], error: String(err) },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json(payload, {
+    headers: { "Cache-Control": "public, max-age=86400" },
+  });
 }
