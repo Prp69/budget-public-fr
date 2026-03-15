@@ -260,9 +260,10 @@ export default function SecuriteSocialePage() {
           </div>
         </section>
 
+        <ComparaisonEU metrique="depenses" titre={"Protection sociale — dépenses publiques totales UE27 (2024)"} note={"Source : Eurostat 2024. Les dépenses sociales (retraites, santé, famille) représentent plus de la moitié des dépenses publiques totales en France."} />
+
       </main>
 
-        <ComparaisonEU metrique="depenses" titre={"Protection sociale — dépenses publiques totales UE27 (2024)"} note={"Source : Eurostat 2024. Les dépenses sociales (retraites, santé, famille) représentent plus de la moitié des dépenses publiques totales en France."} />
 
       <footer style={ borderTop: "1px solid var(--bordure)", padding: "2rem 0" }>
         <div className="container" style={ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }>
