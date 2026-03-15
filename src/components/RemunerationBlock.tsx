@@ -1,5 +1,6 @@
 // src/components/RemunerationBlock.tsx
 // Bloc rémunération — style éditorial cohérent avec le reste du site
+import type { ReactElement } from "react";
 
 interface LigneMontant {
   label: string;
@@ -28,7 +29,7 @@ interface RemunerationData {
 
 // ─── Icônes SVG monochromes ───────────────────────────────────────────────────
 
-const ICONS: Record<string, JSX.Element> = {
+const ICONS: Record<string, ReactElement> = {
   coin: (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2M9.5 9.5A2.5 2.5 0 0112 8a2.5 2.5 0 010 5 2.5 2.5 0 000 5 2.5 2.5 0 002.5-1.5"/>
