@@ -132,7 +132,7 @@ export default function ComparaisonEU({
             {metrique === "dette" && (
               <div style={{ display: "flex", alignItems: "center", gap: ".375rem" }}>
                 <span style={{ width: 12, height: 12, borderRadius: 2, background: "#C0392B", display: "inline-block" }} />
-                <span style={{ fontFamily: "var(--sans)", fontSize: ".75rem", color: "var(--gris-2)" }}>{"Debt {"}>{"100% PIB"}</span>
+                <span style={{ fontFamily: "var(--sans)", fontSize: ".75rem", color: "var(--gris-2)" }}>{"Dette > 100% PIB"}</span>
               </div>
             )}
           </div>
