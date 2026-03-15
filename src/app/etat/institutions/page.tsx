@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
+import RemunerationBlock from "@/components/RemunerationBlock";
 import Hemicycle from "@/components/Hemicycle";
 
 // ═══════════════════════════════════════════════════════════
@@ -220,6 +221,7 @@ export default function InstitutionsPage() {
               </p>
             </div>
           </div>
+            <RemunerationBlock type="depute" />
         </section>
 
         {/* ── SÉNAT ── */}
@@ -254,6 +256,7 @@ export default function InstitutionsPage() {
             <div className="chart-wrapper">
               <Hemicycle chambre="SENAT" titre={"Composition du Sénat — 348 sièges"} />
             </div>
+            <RemunerationBlock type="senateur" />
           </div>
         </section>
 
@@ -329,9 +332,12 @@ export default function InstitutionsPage() {
               <div className="chart-source">{"Source : info.gouv.fr, décret du 12 octobre 2025 — touteleurope.eu, franceinfo.fr"}</div>
             </div>
           </div>
+          <div className="container" style={{ maxWidth: 960 }}>
+            <RemunerationBlock type="ministre" />
+          </div>
         </section>
 
-        {/* ── AUTRES INSTITUTIONS ── */}
+        {/* ── AUTRES INSTITUTIONS ── */}}
         <section className="section-page" style={{ background: "var(--creme-fonce)" }}>
           <div className="container" style={{ maxWidth: 960 }}>
             <span className="rule-rouge" />
