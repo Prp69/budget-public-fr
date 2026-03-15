@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
+import Hemicycle from "@/components/Hemicycle";
 
 // ═══════════════════════════════════════════════════════════
 // DONNÉES
@@ -136,46 +137,6 @@ const ROLE_COULEUR: Record<string, string> = {
   "Protection":    "#EEF7EF",
 };
 
-// ── Mini graphique hémicycle en barres ──
-function HemicycleBar({ groupes, total, titre }: {
-  groupes: typeof GROUPES_AN;
-  total: number;
-  titre: string;
-}) {
-  return (
-    <div>
-      <div style={{ fontFamily: "var(--sans)", fontSize: ".75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: "var(--gris-2)", marginBottom: ".75rem" }}>
-        {titre}
-      </div>
-      {/* Barre hémicycle */}
-      <div style={{ display: "flex", height: 28, borderRadius: 4, overflow: "hidden", marginBottom: ".875rem" }}>
-        {groupes.filter(g => g.sieges > 0).map((g) => (
-          <div
-            key={g.sigle}
-            title={`${g.nom} : ${g.sieges} sièges`}
-            style={{ width: `${(g.sieges / total) * 100}%`, background: g.couleur, minWidth: g.sieges > 3 ? 2 : 0 }}
-          />
-        ))}
-      </div>
-      {/* Légende */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: ".375rem .875rem" }}>
-        {groupes.filter(g => g.sieges >= 10).map((g) => (
-          <div key={g.sigle} style={{ display: "flex", alignItems: "center", gap: ".35rem" }}>
-            <span style={{ width: 10, height: 10, borderRadius: 2, background: g.couleur, flexShrink: 0, display: "inline-block" }} />
-            <span style={{ fontFamily: "var(--sans)", fontSize: ".75rem", color: "var(--encre)" }}>
-              <strong>{g.sigle}</strong>
-              {" "}{g.sieges}
-            </span>
-          </div>
-        ))}
-        <span style={{ fontFamily: "var(--mono)", fontSize: ".75rem", color: "var(--gris-3)", marginLeft: ".25rem" }}>
-          {"= " + total + " sièges"}
-        </span>
-      </div>
-    </div>
-  );
-}
-
 // ═══════════════════════════════════════════════════════════
 // PAGE
 // ═══════════════════════════════════════════════════════════
@@ -248,30 +209,7 @@ export default function InstitutionsPage() {
             </p>
 
             <div className="chart-wrapper">
-              <HemicycleBar groupes={GROUPES_AN} total={TOTAL_AN} titre={"Composition par groupe politique — XVIIe législature (oct. 2025)"} />
-
-              {/* Tableau détaillé */}
-              <div style={{ marginTop: "1.5rem" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".375rem 2rem" }}>
-                  {GROUPES_AN.map((g, i) => {
-                    const isLeft = i < Math.ceil(GROUPES_AN.length / 2);
-                    return (
-                      <div key={g.sigle} style={{ display: "flex", alignItems: "center", gap: ".625rem", padding: ".25rem .375rem" }}>
-                        <span style={{ width: 10, height: 10, borderRadius: 2, background: g.couleur, flexShrink: 0, display: "inline-block" }} />
-                        <span style={{ fontFamily: "var(--sans)", fontSize: ".8125rem", color: "var(--encre)", flex: 1 }}>{g.nom}</span>
-                        <div style={{ width: 80, background: "var(--gris-5)", borderRadius: 2, height: 8, overflow: "hidden" }}>
-                          <div style={{ height: "100%", borderRadius: 2, width: `${(g.sieges / Math.max(...GROUPES_AN.map(x=>x.sieges))) * 100}%`, background: g.couleur }} />
-                        </div>
-                        <span style={{ fontFamily: "var(--mono)", fontSize: ".8125rem", fontWeight: 600, color: "var(--encre)", minWidth: 28, textAlign: "right" }}>{g.sieges}</span>
-                        <span style={{ fontFamily: "var(--mono)", fontSize: ".7rem", color: "var(--gris-3)", minWidth: 36, textAlign: "right" }}>
-                          {((g.sieges / TOTAL_AN) * 100).toFixed(1)}%
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="chart-source">{"Source : Assemblée nationale, effectifs des groupes au 13 octobre 2025 — vie-publique.fr"}</div>
+              <Hemicycle chambre="AN" titre={"Composition de l'Assemblée nationale — XVIIe législature (577 sièges)"} />
             </div>
 
             {/* Coût par député */}
@@ -314,25 +252,7 @@ export default function InstitutionsPage() {
             </p>
 
             <div className="chart-wrapper">
-              <HemicycleBar groupes={GROUPES_SENAT} total={TOTAL_SENAT} titre={"Composition par groupe politique — octobre 2025"} />
-              <div style={{ marginTop: "1.5rem" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".375rem 2rem" }}>
-                  {GROUPES_SENAT.map((g) => (
-                    <div key={g.sigle} style={{ display: "flex", alignItems: "center", gap: ".625rem", padding: ".25rem .375rem" }}>
-                      <span style={{ width: 10, height: 10, borderRadius: 2, background: g.couleur, flexShrink: 0, display: "inline-block" }} />
-                      <span style={{ fontFamily: "var(--sans)", fontSize: ".8125rem", color: "var(--encre)", flex: 1 }}>{g.nom}</span>
-                      <div style={{ width: 80, background: "var(--gris-5)", borderRadius: 2, height: 8, overflow: "hidden" }}>
-                        <div style={{ height: "100%", borderRadius: 2, width: `${(g.sieges / Math.max(...GROUPES_SENAT.map(x=>x.sieges))) * 100}%`, background: g.couleur }} />
-                      </div>
-                      <span style={{ fontFamily: "var(--mono)", fontSize: ".8125rem", fontWeight: 600, color: "var(--encre)", minWidth: 28, textAlign: "right" }}>{g.sieges}</span>
-                      <span style={{ fontFamily: "var(--mono)", fontSize: ".7rem", color: "var(--gris-3)", minWidth: 36, textAlign: "right" }}>
-                        {((g.sieges / TOTAL_SENAT) * 100).toFixed(1)}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="chart-source">{"Source : Sénat, groupes politiques au 1er octobre 2025 — france-politique.fr"}</div>
+              <Hemicycle chambre="SENAT" titre={"Composition du Sénat — 348 sièges"} />
             </div>
           </div>
         </section>
