@@ -4,6 +4,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
+import ComparaisonEU from "@/components/ComparaisonEU";
 
 // ─── Données PLFSS 2025 ───────────────────────────────────────────────────────
 
@@ -261,9 +262,11 @@ export default function SecuriteSocialePage() {
 
       </main>
 
-      <footer style={{ borderTop: "1px solid var(--bordure)", padding: "2rem 0" }}>
-        <div className="container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
-          <span style={{ fontFamily: "var(--sans)", fontSize: ".8125rem", color: "var(--gris-3)" }}>{"© 2025 BudgetPublic — PLFSS 2025"}</span>
+        <ComparaisonEU metrique="depenses" titre={"Protection sociale — dépenses publiques totales UE27 (2024)"} note={"Source : Eurostat 2024. Les dépenses sociales (retraites, santé, famille) représentent plus de la moitié des dépenses publiques totales en France."} />
+
+      <footer style={ borderTop: "1px solid var(--bordure)", padding: "2rem 0" }>
+        <div className="container" style={ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }>
+          <span style={ fontFamily: "var(--sans)", fontSize: ".8125rem", color: "var(--gris-3)" }>{"© 2025 BudgetPublic — PLFSS 2025"}</span>
           <Link href="/sources" style={{ fontFamily: "var(--sans)", fontSize: ".8125rem", color: "var(--gris-2)", textDecoration: "none" }}>{"Sources →"}</Link>
         </div>
       </footer>

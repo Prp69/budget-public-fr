@@ -2,6 +2,7 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import Header from "@/components/Header";
+import ComparaisonEU from "@/components/ComparaisonEU";
 
 export const metadata: Metadata = {
   title: "Budget de l'État — Budget Public",
@@ -229,6 +230,9 @@ export default function EtatPage() {
         </section>
 
       </main>
+
+        <ComparaisonEU metrique="depenses" titre={"Dépenses publiques totales — France vs UE27 (2024)"} />
+        <ComparaisonEU metrique="deficit" titre={"Déficit public — France vs UE27 (2024)"} />
 
       <footer style={{ borderTop: "1px solid var(--bordure)", padding: "2rem 0" }}>
         <div className="container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>

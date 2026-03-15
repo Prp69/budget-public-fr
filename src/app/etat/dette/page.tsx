@@ -2,6 +2,7 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import Header from "@/components/Header";
+import ComparaisonEU from "@/components/ComparaisonEU";
 
 export const metadata: Metadata = {
   title: "Dette publique française — Budget Public",
@@ -108,6 +109,8 @@ export default function DettePage() {
           </div>
         </section>
       </main>
+
+        <ComparaisonEU metrique="dette" titre={"Dette publique — comparaison UE27 (fin 2024)"} note={"Source : Eurostat, 2e notification PDE oct. 2025. Dette au sens du traité de Maastricht."} />
 
       <footer style={{ borderTop: "1px solid var(--bordure)", padding: "2rem 0" }}>
         <div className="container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>

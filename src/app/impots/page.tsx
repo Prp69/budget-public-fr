@@ -2,6 +2,7 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import Header from "@/components/Header";
+import ComparaisonEU from "@/components/ComparaisonEU";
 
 export const metadata: Metadata = {
   title: "Impôts & Prélèvements — Budget Public",
@@ -90,6 +91,8 @@ export default function ImpotsPage() {
           </div>
         </section>
       </main>
+
+        <ComparaisonEU metrique="depenses" titre={"Prélèvements & dépenses publiques — France vs UE27 (2024)"} note={"Source : Eurostat 2024. Les dépenses publiques totales incluent impôts, cotisations sociales et autres recettes."} />
 
       <footer style={{ borderTop: "1px solid var(--bordure)", padding: "2rem 0" }}>
         <div className="container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
