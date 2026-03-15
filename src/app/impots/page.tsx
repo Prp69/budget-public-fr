@@ -30,7 +30,13 @@ export default function ImpotsPage() {
           <div className="container inner" style={{ maxWidth: 860 }}>
             <span className="tag-hero">💶 Fiscalité française</span>
             <h1>{"Impôts & Prélèvements obligatoires"}</h1>
-            <p className="lead">{"La France collecte environ 1 100 milliards de prélèvements obligatoires par an — 46,1 % du PIB, parmi les plus élevés au monde."}</p>
+            <p className="lead">{"La France collecte environ 1 100 milliards de prélèvements obligatoires par an, soit 46,1 % du PIB — l'un des taux les plus élevés au monde, et plus de 6 points au-dessus de la moyenne européenne. Ces prélèvements financent l'ensemble des dépenses publiques : État, Sécurité sociale et collectivités locales."}
+                </p>
+                <p style={{ fontFamily: "var(--sans)", fontSize: "1.0625rem", color: "rgba(255,255,255,.85)", lineHeight: 1.7, maxWidth: 640, marginTop: ".875rem" }}>
+                  {"Les prélèvements obligatoires comprennent les impôts (TVA, impôt sur le revenu, impôt sur les sociétés…) et les cotisations sociales. La TVA est de loin le premier impôt avec 213 Md€ de recettes annuelles, car elle touche chaque consommateur à chaque achat. L'impôt sur le revenu, lui, ne concerne que 40 % des foyers fiscaux — les plus modestes en sont exonérés grâce au système de tranches progressives."}
+                </p>
+                <p className="lead" style={{ marginTop: ".75rem" }}>
+                  {"Les prélèvements obligatoires comprennent les impôts (TVA, impôt sur le revenu, impôt sur les sociétés…) et les cotisations sociales. La TVA est le premier impôt avec 213 Md€ de recettes, car elle touche tous les consommateurs à chaque achat. L'impôt sur le revenu, lui, ne concerne que 40 % des foyers fiscaux — les plus modestes en sont exonérés."}</p>
             <div style={{ display: "flex", gap: "2.5rem", marginTop: "1.5rem", flexWrap: "wrap" }}>
               {[
                 { v: "1 100 Md€", l: "Prélèvements totaux 2023" },
@@ -90,9 +96,10 @@ export default function ImpotsPage() {
             </div>
           </div>
         </section>
+        <ComparaisonEU metrique="depenses" titre={"Prélèvements & dépenses publiques — France vs UE27 (2024)"} note={"Source : Eurostat 2024. Les dépenses publiques totales incluent impôts, cotisations sociales et autres recettes."} />
+
       </main>
 
-        <ComparaisonEU metrique="depenses" titre={"Prélèvements & dépenses publiques — France vs UE27 (2024)"} note={"Source : Eurostat 2024. Les dépenses publiques totales incluent impôts, cotisations sociales et autres recettes."} />
 
       <footer style={{ borderTop: "1px solid var(--bordure)", padding: "2rem 0" }}>
         <div className="container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>

@@ -87,7 +87,10 @@ export default function EtatPage() {
                 <span className="tag-hero">🏛️ Finances publiques nationales</span>
                 <h1>{"Budget de l'État"}</h1>
                 <p className="lead">
-                  {"L'État dépense 1 600 milliards d'euros par an. Au-delà du budget général (PLF), la Sécurité sociale représente à elle seule 666 Md€ — plus que le budget de l'État."}
+                  {"L'État dépense 1 600 milliards d'euros par an au total, si l'on additionne le budget de l'État, la Sécurité sociale et les collectivités locales. Ce chiffre représente environ 57 % du PIB français, ce qui place la France parmi les pays où la part de la dépense publique est la plus élevée au monde."}
+                </p>
+                <p className="lead" style={{ marginTop: ".75rem" }}>
+                  {"Contrairement à ce que l'on croit souvent, le budget de l'État (PLF, 491 Md€) n'est que la partie émergée de l'iceberg. La Sécurité sociale (PLFSS) pèse à elle seule 666 Md€ — soit davantage — tandis que les collectivités territoriales (communes, départements, régions) gèrent 290 Md€ supplémentaires. Ces trois budgets sont votés séparément chaque automne par le Parlement."}
                 </p>
               </div>
               <div style={{ display: "flex", gap: "2.5rem", flexShrink: 0, flexWrap: "wrap" }}>
@@ -229,10 +232,11 @@ export default function EtatPage() {
           </div>
         </section>
 
-      </main>
-
         <ComparaisonEU metrique="depenses" titre={"Dépenses publiques totales — France vs UE27 (2024)"} />
         <ComparaisonEU metrique="deficit" titre={"Déficit public — France vs UE27 (2024)"} />
+
+      </main>
+
 
       <footer style={{ borderTop: "1px solid var(--bordure)", padding: "2rem 0" }}>
         <div className="container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>

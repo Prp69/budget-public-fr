@@ -83,7 +83,7 @@ function formatVal(v: number, metrique: Metrique): string {
 
 const CONFIGS: Record<Metrique, { label: string; tri: "desc" | "asc"; refVal: number }> = {
   depenses: { label: "Dépenses publiques (% PIB)",      tri: "desc", refVal: MOYENNE_UE.depenses },
-  deficit:  { label: "Solde public (% PIB)",             tri: "asc",  refVal: MOYENNE_UE.deficit  },
+  deficit:  { label: "Solde public (% PIB)",             tri: "desc", refVal: MOYENNE_UE.deficit  },
   dette:    { label: "Dette publique (% PIB, Maastricht)", tri: "desc", refVal: MOYENNE_UE.dette  },
 };
 

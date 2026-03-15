@@ -33,7 +33,10 @@ export default function DettePage() {
           <div className="container inner" style={{ maxWidth: 860 }}>
             <span className="tag-hero">⚠️ État › Dette publique</span>
             <h1>{"Dette publique"}</h1>
-            <p className="lead">{"3 162 milliards d'euros fin 2023 — soit 110,6 % du PIB. Qui détient cette dette ? Comment a-t-elle évolué ?"}</p>
+            <p className="lead">{"3 162 milliards d'euros fin 2023 — soit 110,6 % du PIB. La dette publique française est l'accumulation de tous les déficits passés : chaque année où les dépenses dépassent les recettes, l'État emprunte sur les marchés financiers pour combler la différence."}
+                </p>
+                <p className="lead" style={{ marginTop: ".75rem" }}>
+                  {"Contrairement aux idées reçues, la dette n'est pas remboursée mais refinancée en permanence : l'État émet de nouvelles obligations (OAT) pour rembourser les anciennes. Le coût de cette dette — les intérêts — atteint 54 Md€ en 2024, soit le deuxième poste budgétaire de l'État, devant même l'Éducation nationale."}</p>
             <div style={{ display: "flex", gap: "2.5rem", marginTop: "1.5rem", flexWrap: "wrap" }}>
               {[
                 { v: "3 162 Md€", l: "Dette totale fin 2023" },
@@ -108,9 +111,10 @@ export default function DettePage() {
             </div>
           </div>
         </section>
+        <ComparaisonEU metrique="dette" titre={"Dette publique — comparaison UE27 (fin 2024)"} note={"Source : Eurostat, 2e notification PDE oct. 2025. Dette au sens du traité de Maastricht."} />
+
       </main>
 
-        <ComparaisonEU metrique="dette" titre={"Dette publique — comparaison UE27 (fin 2024)"} note={"Source : Eurostat, 2e notification PDE oct. 2025. Dette au sens du traité de Maastricht."} />
 
       <footer style={{ borderTop: "1px solid var(--bordure)", padding: "2rem 0" }}>
         <div className="container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
