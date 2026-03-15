@@ -17,9 +17,10 @@ const NAV = [
   {
     label: "État", href: "/etat",
     children: [
-      { label: "Vue d'ensemble",       href: "/etat" },
-      { label: "Budget de l'État (PLF)", href: "/etat/ministeres" },
-      { label: "Dette publique",       href: "/etat/dette" },
+      { label: "Vue d'ensemble",           href: "/etat" },
+      { label: "Budget de l'État (PLF)",    href: "/etat/ministeres" },
+      { label: "Sécurité sociale (PLFSS)",  href: "/etat/securite-sociale" },
+      { label: "Dette publique",             href: "/etat/dette" },
     ],
   },
   {

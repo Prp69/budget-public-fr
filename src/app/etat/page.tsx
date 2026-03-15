@@ -29,7 +29,7 @@ const BUDGETS = [
     couleur: "#2B8C6B",
     pct: 136,
     desc: "Toutes branches : maladie (266 Md€), vieillesse (304 Md€), famille (59 Md€), autonomie (42 Md€).",
-    lien: "/etat/secu",
+    lien: "/etat/securite-sociale",
     labelLien: "Détail par branche →",
     tag: "PLFSS 2025",
   },
@@ -194,7 +194,7 @@ export default function EtatPage() {
                     </div>
                   ))}
                   <div className="chart-source">{"Source : PLFSS 2025, Ministère de la Santé"}</div>
-                  <Link href="/etat/secu" className="btn" style={{ marginTop: "1rem", fontSize: ".8125rem", background: "#2B8C6B", color: "white" }}>{"Détail Sécurité sociale →"}</Link>
+                  <Link href="/etat/securite-sociale" className="btn" style={{ marginTop: "1rem", fontSize: ".8125rem", background: "#2B8C6B", color: "white" }}>{"Détail Sécurité sociale →"}</Link>
                 </div>
               </div>
 
