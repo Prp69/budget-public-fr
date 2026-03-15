@@ -137,30 +137,30 @@ export default function ComparaisonEU({
             )}
           </div>
 
-          {/* Graphique barres horizontales */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".375rem 2rem" }}>
-            {pays.map((p, i) => {
-              const val     = p[metrique];
-              const absVal  = Math.abs(val);
-              const pct     = (absVal / maxVal) * 100;
-              const isFR    = p.code === "FR";
-              const couleur = getCouleur(p, metrique);
-              const isAvgLine = metrique === "deficit" || metrique === "depenses";
+          {/* Graphique barres horizontales — col1 : rangs 1→⌈n/2⌉, col2 : ⌈n/2⌉+1→n */}
+          {(() => {
+            const mid  = Math.ceil(pays.length / 2);
+            const col1 = pays.slice(0, mid);
+            const col2 = pays.slice(mid);
 
+            const renderPays = (p: typeof pays[0], rank: number) => {
+              const val    = p[metrique];
+              const absVal = Math.abs(val);
+              const pct    = (absVal / maxVal) * 100;
+              const isFR   = p.code === "FR";
+              const couleur = getCouleur(p, metrique);
               return (
                 <div key={p.code} style={{
                   padding: isFR ? ".375rem .5rem" : ".25rem .5rem",
                   background: isFR ? "rgba(192,57,43,.06)" : "transparent",
                   borderRadius: "var(--radius-sm)",
                   border: isFR ? "1px solid rgba(192,57,43,.15)" : "1px solid transparent",
-                  position: "relative",
+                  marginBottom: ".125rem",
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: ".625rem" }}>
-                    {/* Rang */}
                     <span style={{ fontFamily: "var(--mono)", fontSize: ".65rem", color: "var(--gris-3)", width: 18, flexShrink: 0, textAlign: "right" }}>
-                      {i + 1}
+                      {rank}
                     </span>
-                    {/* Nom */}
                     <span style={{
                       fontFamily: "var(--sans)",
                       fontSize: ".8125rem",
@@ -174,7 +174,6 @@ export default function ComparaisonEU({
                     }}>
                       {isFR ? "🇫🇷 " : ""}{p.nom}
                     </span>
-                    {/* Barre */}
                     <div style={{ flex: 1, background: "var(--gris-5)", borderRadius: 2, height: isFR ? 12 : 9, overflow: "hidden" }}>
                       <div style={{
                         height: "100%",
@@ -185,7 +184,6 @@ export default function ComparaisonEU({
                         transition: "width .4s ease",
                       }} />
                     </div>
-                    {/* Valeur */}
                     <span style={{
                       fontFamily: "var(--mono)",
                       fontSize: isFR ? ".875rem" : ".8125rem",
@@ -200,8 +198,15 @@ export default function ComparaisonEU({
                   </div>
                 </div>
               );
-            })}
-          </div>
+            };
+
+            return (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 2rem" }}>
+                <div>{col1.map((p, i) => renderPays(p, i + 1))}</div>
+                <div>{col2.map((p, i) => renderPays(p, mid + i + 1))}</div>
+              </div>
+            );
+          })()}
 
           {/* Ligne moyenne UE */}
           <div style={{ marginTop: "1rem", padding: ".75rem 1rem", background: "var(--bleu-pale)", borderRadius: "var(--radius-sm)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: ".5rem" }}>
