@@ -1,84 +1,71 @@
 // src/app/api/parlementaires/[chambre]/route.ts
-// Sources officielles uniquement :
-//   AN  : data.assemblee-nationale.fr (CSV direct, 17e législature)
-//   Sénat : data.senat.fr (CSV direct, sénateurs ACTIFS)
+// Sources officielles :
+//   AN    : data.assemblee-nationale.fr  — CSV séparateur virgule, UTF-8
+//   Sénat : data.senat.fr/ODSEN_GENERAL.csv — séparateur point-virgule, Latin-1
 
 import { NextResponse } from "next/server";
 
-// ─── Helpers CSV ──────────────────────────────────────────────────────────────
+// ─── Parseur CSV générique ────────────────────────────────────────────────────
 
-function parseCSV(text: string): Record<string, string>[] {
+function parseCSV(text: string, sep = ","): Record<string, string>[] {
   const lines = text.trim().split("\n");
   if (lines.length < 2) return [];
-
-  // Parser l'en-tête (gère les guillemets)
-  const headers = parseLine(lines[0]);
-
-  return lines.slice(1).map(line => {
-    const values = parseLine(line);
-    const row: Record<string, string> = {};
-    headers.forEach((h, i) => {
-      row[h.trim()] = (values[i] ?? "").trim();
-    });
-    return row;
-  }).filter(row => Object.values(row).some(v => v.length > 0));
+  const headers = splitLine(lines[0], sep);
+  return lines.slice(1)
+    .map(line => {
+      const vals = splitLine(line, sep);
+      const row: Record<string, string> = {};
+      headers.forEach((h, i) => { row[h.trim().replace(/^\uFEFF/, "")] = (vals[i] ?? "").trim(); });
+      return row;
+    })
+    .filter(r => Object.values(r).some(v => v));
 }
 
-function parseLine(line: string): string[] {
-  const result: string[] = [];
-  let current = "";
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (c === '"') {
-      inQuotes = !inQuotes;
-    } else if (c === "," && !inQuotes) {
-      result.push(current);
-      current = "";
-    } else {
-      current += c;
-    }
+function splitLine(line: string, sep: string): string[] {
+  const res: string[] = [];
+  let cur = "", inQ = false;
+  for (const c of line) {
+    if (c === '"') { inQ = !inQ; }
+    else if (c === sep && !inQ) { res.push(cur); cur = ""; }
+    else { cur += c; }
   }
-  result.push(current);
-  return result;
+  res.push(cur);
+  return res;
 }
 
-// ─── Mapping groupe AN (sigle CSV → sigle interne) ───────────────────────────
+// ─── Mapping sigles AN ────────────────────────────────────────────────────────
+// Valeurs exactes de la colonne "Groupe politique (abrégé)" du CSV officiel
 
-// Sigles exacts tels qu'ils apparaissent dans le CSV officiel AN
-// Source : liste_deputes_libre_office.csv — colonne "Groupe politique (abrégé)"
 const SIGLE_AN: Record<string, string> = {
-  "GDR":     "GDR",   // Gauche Démocrate et Républicaine
-  "LFI-NFP": "LFI",   // La France insoumise – Nouveau Front Populaire
-  "LFI":     "LFI",
-  "EcoS":    "EcoS",  // Écologiste et Social (casse exacte du CSV)
-  "ECOS":    "EcoS",
-  "SOC":     "SOC",   // Socialistes et apparentés
-  "LIOT":    "LIOT",  // Libertés, Indépendants, Outre-mer et Territoires
-  "EPR":     "EPR",   // Ensemble pour la République
-  "Dem":     "DEM",   // Les Démocrates (casse exacte : D majuscule, em minuscule)
-  "DEM":     "DEM",
-  "HOR":     "HOR",   // Horizons & Indépendants
-  "DR":      "DR",    // Droite Républicaine
-  "UDR":     "UDR",   // Union des droites pour la République
-  "RN":      "RN",    // Rassemblement National
-  "NI":      "NI",    // Non-inscrits
+  "GDR":     "GDR",
+  "LFI-NFP": "LFI",
+  "EcoS":    "EcoS",
+  "SOC":     "SOC",
+  "LIOT":    "LIOT",
+  "EPR":     "EPR",
+  "Dem":     "DEM",   // casse exacte du CSV : D majuscule, em minuscule
+  "HOR":     "HOR",
+  "DR":      "DR",
+  "UDR":     "UDR",
+  "RN":      "RN",
+  "NI":      "NI",
 };
 
-// ─── Mapping groupe Sénat (libellé CSV → sigle interne) ─────────────────────
+// ─── Mapping sigles Sénat ─────────────────────────────────────────────────────
+// Valeurs exactes de la colonne "Groupe politique" du CSV ODSEN_GENERAL
 
-function sigleSenat(libelle: string): string {
-  const l = (libelle ?? "").toLowerCase().trim();
-  if (l === "crcek" || l.includes("communiste") || l.includes("kanaky")) return "CRCEK";
-  if (l === "est"   || l.includes("solidarité et territoires"))           return "EST";
-  if (l === "ser"   || l.includes("socialiste, écol"))                    return "SER";
-  if (l === "rdse"  || l.includes("rassemblement démocratique"))          return "RDSE";
-  if (l === "rdpi"  || l.includes("progressistes"))                       return "RDPI";
-  if (l === "lirt"  || l.includes("indépendants"))                        return "LIRT";
-  if (l === "uc"    || l.includes("union centriste"))                     return "UC";
-  if (l === "lr"    || l.includes("républicains"))                        return "LR";
-  return "NI";
-}
+const SIGLE_SENAT: Record<string, string> = {
+  "CRCEK": "CRCEK",
+  "EST":   "EST",
+  "SER":   "SER",
+  "RDSE":  "RDSE",
+  "RDPI":  "RDPI",
+  "LIRT":  "LIRT",
+  "UC":    "UC",
+  "LR":    "LR",
+  "NI":    "NI",
+  "RASNAG":"NI",  // Réunion administrative des non-affiliés
+};
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
@@ -89,16 +76,17 @@ export async function GET(
   const { chambre } = await params;
 
   try {
+    // ── Assemblée nationale ──
     if (chambre === "AN") {
       const url = "https://data.assemblee-nationale.fr/static/openData/repository/17/amo/deputes_actifs_csv_opendata/liste_deputes_libre_office.csv";
       const res = await fetch(url, {
         next:    { revalidate: 86400 },
-        headers: { "User-Agent": "BudgetPublic/1.0 (opendata@budgetpublic.fr)" },
+        headers: { "User-Agent": "BudgetPublic/1.0" },
       });
-      if (!res.ok) throw new Error(`AN CSV ${res.status}`);
+      if (!res.ok) throw new Error(`AN HTTP ${res.status}`);
 
-      const text = await res.text();
-      const rows = parseCSV(text);
+      const text  = await res.text();
+      const rows  = parseCSV(text, ",");
 
       const parlementaires = rows
         .filter(r => r["Prénom"] && r["Nom"])
@@ -108,43 +96,62 @@ export async function GET(
           departement: r["Département"] ?? "",
         }));
 
-      // Log diagnostic
-      const parGroupe = parlementaires.reduce((acc, p) => {
-        acc[p.sigle] = (acc[p.sigle] ?? 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-      console.log(`[parlementaires/AN] ${parlementaires.length} députés:`, parGroupe);
+      const debug = parlementaires.reduce((a, p) => { a[p.sigle] = (a[p.sigle] ?? 0) + 1; return a; }, {} as Record<string,number>);
+      console.log("[AN]", parlementaires.length, "députés:", debug);
 
       return NextResponse.json(
-        { parlementaires, total: parlementaires.length, debug: parGroupe },
+        { parlementaires, total: parlementaires.length, debug },
         { headers: { "Cache-Control": "public, max-age=86400" } }
       );
     }
 
+    // ── Sénat ──
     if (chambre === "SENAT") {
       const url = "https://data.senat.fr/data/senateurs/ODSEN_GENERAL.csv";
+      // Le CSV Sénat est en Latin-1 et séparateur ";"
       const res = await fetch(url, {
         next:    { revalidate: 86400 },
         headers: { "User-Agent": "BudgetPublic/1.0" },
       });
-      if (!res.ok) throw new Error(`Sénat CSV ${res.status}`);
+      if (!res.ok) throw new Error(`Sénat HTTP ${res.status}`);
 
-      const text = await res.text();
-      const rows = parseCSV(text);
+      // Lire en Latin-1 (ISO-8859-1)
+      const buffer     = await res.arrayBuffer();
+      const text       = new TextDecoder("iso-8859-1").decode(buffer);
+      const rows       = parseCSV(text, ";");
+
+      // La 1ère ligne du CSV Sénat est un commentaire SQL — la sauter si elle commence par "%"
+      // parseCSV a déjà pris la 1ère ligne comme en-têtes, donc vérifier les clés
+      const sampleRow  = rows[0] ?? {};
+      const keys       = Object.keys(sampleRow);
+      console.log("[SENAT] colonnes détectées:", keys.slice(0, 6));
+
+      // Colonnes attendues : "Matricule", "Qualité", "Nom usuel", "Prénom usuel",
+      // "État", "Groupe politique", "Circonscription"
+      // Si la colonne s'appelle "tat" (Latin-1 mal décodé → non, on décode bien)
+      const colNom     = keys.find(k => k.toLowerCase().includes("nom usuel"))     ?? "Nom usuel";
+      const colPrenom  = keys.find(k => k.toLowerCase().includes("prnom") || k.toLowerCase().includes("prénom")) ?? "Prénom usuel";
+      const colEtat    = keys.find(k => k.toLowerCase().includes("tat") || k.toLowerCase() === "état") ?? "État";
+      const colGroupe  = keys.find(k => k.toLowerCase().includes("groupe"))        ?? "Groupe politique";
+      const colCirco   = keys.find(k => k.toLowerCase().includes("circo"))         ?? "Circonscription";
+
+      console.log("[SENAT] colonnes utilisées:", { colNom, colPrenom, colEtat, colGroupe });
 
       const parlementaires = rows
-        // Garder uniquement les sénateurs ACTIFS
-        .filter(r => (r["État"] ?? r["tat"] ?? "").toUpperCase() === "ACTIF")
-        .filter(r => r["Nom usuel"] || r["Prnom usuel"])
+        .filter(r => (r[colEtat] ?? "").toUpperCase() === "ACTIF")
+        .filter(r => r[colNom])
         .map(r => ({
-          nom:         `${r["Prénom usuel"] ?? r["Prnom usuel"] ?? ""} ${r["Nom usuel"] ?? ""}`.trim(),
-          sigle:       sigleSenat(r["Groupe politique"] ?? ""),
-          departement: r["Circonscription"] ?? "",
+          nom:         `${r[colPrenom] ?? ""} ${r[colNom] ?? ""}`.trim(),
+          sigle:       SIGLE_SENAT[(r[colGroupe] ?? "").trim()] ?? "NI",
+          departement: r[colCirco] ?? "",
         }))
-        .filter(r => r.nom.length > 1);
+        .filter(r => r.nom.length > 2);
+
+      const debug = parlementaires.reduce((a, p) => { a[p.sigle] = (a[p.sigle] ?? 0) + 1; return a; }, {} as Record<string,number>);
+      console.log("[SENAT]", parlementaires.length, "sénateurs:", debug);
 
       return NextResponse.json(
-        { parlementaires, total: parlementaires.length },
+        { parlementaires, total: parlementaires.length, debug },
         { headers: { "Cache-Control": "public, max-age=86400" } }
       );
     }
@@ -154,10 +161,6 @@ export async function GET(
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`[parlementaires/${chambre}]`, msg);
-    // Retourne un tableau vide — le composant affichera le fallback "siège N"
-    return NextResponse.json(
-      { error: msg, parlementaires: [], total: 0 },
-      { status: 200 }
-    );
+    return NextResponse.json({ error: msg, parlementaires: [], total: 0 }, { status: 200 });
   }
 }

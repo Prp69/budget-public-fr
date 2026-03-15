@@ -1,7 +1,7 @@
 "use client";
 // src/components/Hemicycle.tsx
 // Hémicycle SVG interactif — disposition gauche→droite par spectre politique
-// Données nominatives chargées depuis nosdeputes.fr / nossenateurs.fr
+// Données nominatives chargées depuis les APIs officielles AN et Sénat via route proxy
 // Chaque point = 1 siège, tooltip au survol avec nom + groupe
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -136,7 +136,7 @@ function genererSieges(groupes: GroupeDef[], total: number): { x: number; y: num
 // CHARGEMENT DONNÉES NOMINATIVES
 // ═══════════════════════════════════════════════════════════════════
 
-// Mapping sigle interne → nom groupe nosdeputes.fr
+// Mapping sigle interne → nom groupe officiel AN
 const MAP_GROUPE_AN: Record<string, string> = {
   "GDR":  "Gauche Démocrate et Républicaine",
   "LFI":  "La France insoumise – NFP",
@@ -227,6 +227,7 @@ export default function Hemicycle({ chambre, titre }: Props) {
   const [sieges,    setSieges]    = useState<Siege[]>([]);
   const [loading,   setLoading]   = useState(true);
   const [filtre,    setFiltre]    = useState<string | null>(null);
+  const [recherche, setRecherche] = useState<string>("");
   const [tooltip,   setTooltip]   = useState<{ visible: boolean; x: number; y: number; siege: Siege | null }>
     ({ visible: false, x: 0, y: 0, siege: null });
 
@@ -325,15 +326,21 @@ export default function Hemicycle({ chambre, titre }: Props) {
       <div style={{ position: "relative", width: "100%", maxWidth: 720, margin: "0 auto" }}>
         <svg ref={svgRef} viewBox="0 0 1000 460" style={{ width: "100%", height: "auto" }}>
           {points.map((p, i) => {
-            const actif = filtre === null || p.siege.sigle === filtre;
+            const rechercheActif = recherche.length >= 2
+              ? p.siege.nom.toLowerCase().includes(recherche.toLowerCase())
+              : true;
+            const filtreActif = filtre === null || p.siege.sigle === filtre;
+            const actif = rechercheActif && filtreActif;
+            const estTrouve = recherche.length >= 2 && rechercheActif;
             return (
               <circle key={i}
-                cx={p.x} cy={p.y} r={RAYON}
+                cx={p.x} cy={p.y}
+                r={estTrouve ? RAYON * 1.5 : RAYON}
                 fill={p.siege.couleur}
-                opacity={actif ? 0.9 : 0.1}
-                stroke={actif ? "rgba(255,255,255,0.4)" : "none"}
-                strokeWidth={0.8}
-                style={{ cursor: "pointer", transition: "opacity .15s ease" }}
+                opacity={actif ? 0.92 : 0.08}
+                stroke={estTrouve ? "white" : actif ? "rgba(255,255,255,0.3)" : "none"}
+                strokeWidth={estTrouve ? 2 : 0.8}
+                style={{ cursor: "pointer", transition: "all .15s ease" }}
                 onMouseEnter={e => handleEnter(e, p.siege)}
                 onMouseLeave={handleLeave}
               />
@@ -398,10 +405,76 @@ export default function Hemicycle({ chambre, titre }: Props) {
         ))}
       </div>
 
-      <div className="chart-source">
+      {/* ── Barre de recherche ── */}
+      <div style={{ marginTop: "1.25rem" }}>
+        <div style={{ position: "relative", maxWidth: 420 }}>
+          <input
+            type="text"
+            value={recherche}
+            onChange={e => setRecherche(e.target.value)}
+            placeholder={chambre === "AN" ? "Rechercher un député par nom…" : "Rechercher un sénateur par nom…"}
+            style={{
+              width: "100%", boxSizing: "border-box",
+              fontFamily: "var(--sans)", fontSize: ".875rem",
+              padding: ".625rem 2.5rem .625rem .875rem",
+              border: "1.5px solid var(--bordure)",
+              borderRadius: "var(--radius-sm)",
+              background: "var(--blanc)", color: "var(--encre)",
+              outline: "none",
+              transition: "border-color 150ms ease",
+            }}
+            onFocus={e => { (e.target as HTMLInputElement).style.borderColor = "var(--bleu)"; }}
+            onBlur={e  => { (e.target as HTMLInputElement).style.borderColor = "var(--bordure)"; }}
+          />
+          {recherche ? (
+            <button onClick={() => setRecherche("")} style={{
+              position: "absolute", right: ".5rem", top: "50%", transform: "translateY(-50%)",
+              background: "none", border: "none", cursor: "pointer",
+              fontFamily: "var(--sans)", fontSize: ".8125rem", color: "var(--gris-3)",
+              padding: ".25rem",
+            }}>{"✕"}</button>
+          ) : (
+            <span style={{ position: "absolute", right: ".625rem", top: "50%", transform: "translateY(-50%)", color: "var(--gris-4)", fontSize: ".875rem", pointerEvents: "none" }}>{"🔍"}</span>
+          )}
+        </div>
+
+        {/* Résultats de recherche */}
+        {recherche.length >= 2 && (() => {
+          const resultats = points
+            .map((p, i) => ({ ...p.siege, idx: i }))
+            .filter(s => s.nom.toLowerCase().includes(recherche.toLowerCase()));
+          return (
+            <div style={{ marginTop: ".5rem" }}>
+              {resultats.length === 0 ? (
+                <span style={{ fontFamily: "var(--sans)", fontSize: ".8125rem", color: "var(--gris-3)", fontStyle: "italic" }}>
+                  {"Aucun résultat pour « "}{recherche}{" »"}
+                </span>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: ".25rem", maxHeight: 200, overflowY: "auto" }}>
+                  {resultats.slice(0, 20).map((s, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
+                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: s.couleur, flexShrink: 0, display: "inline-block" }} />
+                      <span style={{ fontFamily: "var(--sans)", fontSize: ".8125rem", color: "var(--encre)", fontWeight: 600 }}>{s.nom}</span>
+                      <span style={{ fontFamily: "var(--sans)", fontSize: ".75rem", color: "var(--gris-3)" }}>{s.groupe}</span>
+                      {s.departement && <span style={{ fontFamily: "var(--sans)", fontSize: ".75rem", color: "var(--gris-4)" }}>{"— "}{s.departement}</span>}
+                    </div>
+                  ))}
+                  {resultats.length > 20 && (
+                    <span style={{ fontFamily: "var(--sans)", fontSize: ".75rem", color: "var(--gris-3)", fontStyle: "italic" }}>
+                      {`+ ${resultats.length - 20} autres résultats — affinez la recherche`}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })()}
+      </div>
+
+      <div className="chart-source" style={{ marginTop: "1rem" }}>
         {chambre === "AN"
-          ? "Sources : Assemblée nationale open data, nosdeputes.fr — XVIIe législature, oct. 2025"
-          : "Sources : Sénat, france-politique.fr, nossenateurs.fr — composition oct. 2025"}
+          ? "Source : data.assemblee-nationale.fr — liste officielle XVIIe législature"
+          : "Source : data.senat.fr — ODSEN_GENERAL, sénateurs en exercice"}
       </div>
     </div>
   );
