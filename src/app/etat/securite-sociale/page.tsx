@@ -265,9 +265,9 @@ export default function SecuriteSocialePage() {
       </main>
 
 
-      <footer style={ borderTop: "1px solid var(--bordure)", padding: "2rem 0" }>
-        <div className="container" style={ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }>
-          <span style={ fontFamily: "var(--sans)", fontSize: ".8125rem", color: "var(--gris-3)" }>{"© 2025 BudgetPublic — PLFSS 2025"}</span>
+      <footer style={{ borderTop: "1px solid var(--bordure)", padding: "2rem 0" }}>
+        <div className="container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
+          <span style={{ fontFamily: "var(--sans)", fontSize: ".8125rem", color: "var(--gris-3)" }}>{"© 2025 BudgetPublic — PLFSS 2025"}</span>
           <Link href="/sources" style={{ fontFamily: "var(--sans)", fontSize: ".8125rem", color: "var(--gris-2)", textDecoration: "none" }}>{"Sources →"}</Link>
         </div>
       </footer>
