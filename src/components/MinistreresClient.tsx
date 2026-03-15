@@ -33,10 +33,10 @@ interface PointHistorique {
 }
 
 interface DetailMinistere {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   titres:      TitreDonnee[];
   programmes:  Programme[];
   historique:  PointHistorique[];
+  _debug?:     { colsDest: string[]; colsNature: string[] };
 }
 
 interface CacheEntry {
