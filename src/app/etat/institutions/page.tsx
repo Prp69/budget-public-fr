@@ -337,7 +337,7 @@ export default function InstitutionsPage() {
           </div>
         </section>
 
-        {/* ── AUTRES INSTITUTIONS ── */}}
+        {/* ── AUTRES INSTITUTIONS ── */}
         <section className="section-page" style={{ background: "var(--creme-fonce)" }}>
           <div className="container" style={{ maxWidth: 960 }}>
             <span className="rule-rouge" />
