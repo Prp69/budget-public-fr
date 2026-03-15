@@ -5,135 +5,235 @@ import Header from "@/components/Header";
 
 export const metadata: Metadata = {
   title: "Budget de l'État — Budget Public",
-  description: "Dépenses par ministère, dette publique, déficit. Données officielles PLF / DGFiP.",
+  description: "PLF, PLFSS, dépenses publiques totales. Où vont les 1 500 milliards de dépenses publiques françaises ?",
 };
 
-const MINISTERES = [
-  { nom: "Éducation nationale",    budget: 84_600_000_000, evol: +2.1 },
-  { nom: "Défense",                budget: 47_200_000_000, evol: +7.5 },
-  { nom: "Intérieur",              budget: 22_500_000_000, evol: +3.2 },
-  { nom: "Travail & Emploi",       budget: 21_800_000_000, evol: -1.4 },
-  { nom: "Économie & Finances",    budget: 19_400_000_000, evol: +0.8 },
-  { nom: "Justice",                budget: 10_900_000_000, evol: +8.1 },
-  { nom: "Santé",                  budget: 10_100_000_000, evol: +4.3 },
-  { nom: "Transitions écologiques",budget: 9_700_000_000,  evol: +12.4 },
+// ─── Données 2025 ─────────────────────────────────────────────────────────────
+
+const BUDGETS = [
+  {
+    id: "etat",
+    label: "Budget de l'État (PLF)",
+    montant: 491_000_000_000,
+    couleur: "var(--bleu)",
+    pct: 100, // base de référence visuelle
+    desc: "Dépenses nettes du budget général — ministères, dette, transferts aux collectivités.",
+    lien: "/etat/ministeres",
+    labelLien: "Détail par ministère →",
+    tag: "PLF 2025",
+  },
+  {
+    id: "secu",
+    label: "Sécurité sociale (PLFSS)",
+    montant: 666_000_000_000,
+    couleur: "#2B8C6B",
+    pct: 136,
+    desc: "Toutes branches : maladie (266 Md€), vieillesse (304 Md€), famille (59 Md€), autonomie (42 Md€).",
+    lien: "/etat/secu",
+    labelLien: "Détail par branche →",
+    tag: "PLFSS 2025",
+  },
+  {
+    id: "collectivites",
+    label: "Collectivités territoriales",
+    montant: 290_000_000_000,
+    couleur: "#B45309",
+    pct: 59,
+    desc: "Communes, départements, régions — budgets de fonctionnement et d'investissement.",
+    lien: "/communes",
+    labelLien: "Explorer les communes →",
+    tag: "2023",
+  },
+];
+
+const TOTAL_DEPENSES_PUBLIQUES = 1_600_000_000_000; // ~60% du PIB
+
+const BRANCHES_SECU = [
+  { label: "Maladie (Ondam)",  montant: 266_000_000_000, couleur: "#2B8C6B",  evol: +2.8 },
+  { label: "Vieillesse",        montant: 304_000_000_000, couleur: "#247A5E",  evol: +3.1 },
+  { label: "Famille",           montant:  59_000_000_000, couleur: "#3DAB88",  evol: +0.8 },
+  { label: "Autonomie",         montant:  42_000_000_000, couleur: "#5BC4A2",  evol: +6.0 },
+  { label: "AT-MP",             montant:  16_000_000_000, couleur: "#7DD3BE",  evol: +2.2 },
+];
+
+const MINISTERES_TOP = [
+  { nom: "Éducation nationale", budget: 84_600_000_000, evol: +2.1 },
+  { nom: "Défense",              budget: 47_200_000_000, evol: +7.5 },
+  { nom: "Ens. supérieur",       budget: 31_400_000_000, evol: +3.8 },
+  { nom: "Intérieur",            budget: 22_500_000_000, evol: +3.2 },
+  { nom: "Travail & Emploi",     budget: 21_800_000_000, evol: -1.4 },
 ];
 
 function fmt(n: number) {
-  return n >= 1e9 ? (n / 1e9).toFixed(1) + " Md€" : (n / 1e6).toFixed(0) + " M€";
+  if (n >= 1e9) return (n / 1e9).toFixed(0) + " Md€";
+  return (n / 1e6).toFixed(0) + " M€";
 }
-const maxB = Math.max(...MINISTERES.map((m) => m.budget));
+
+const maxBranche = Math.max(...BRANCHES_SECU.map((b) => b.montant));
+const maxMinistere = Math.max(...MINISTERES_TOP.map((m) => m.budget));
 
 export default function EtatPage() {
   return (
     <>
       <Header />
       <main>
-        {/* HERO */}
+
+        {/* ── HERO ── */}
         <section className="hero-interieur">
-          <div className="container inner" style={{ maxWidth: 860 }}>
+          <div className="container inner" style={{ maxWidth: 960 }}>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: "2rem" }}>
               <div>
-                <span className="tag-hero">🏛️ Finances nationales</span>
+                <span className="tag-hero">🏛️ Finances publiques nationales</span>
                 <h1>{"Budget de l'État"}</h1>
-                <p className="lead">{"491 milliards de dépenses, 3 162 milliards de dette. Explorez comment l'État français gère les finances publiques nationales."}</p>
-                <div style={{ display: "flex", gap: ".75rem", flexWrap: "wrap", marginTop: "1.5rem" }}>
-                  <Link href="/etat/ministeres" className="btn" style={{ background: "white", color: "var(--bleu)", fontWeight: 700 }}>{"Budget par ministère"}</Link>
-                  <Link href="/etat/dette" className="btn" style={{ background: "rgba(255,255,255,.15)", color: "white", border: "1px solid rgba(255,255,255,.3)" }}>{"Dette publique →"}</Link>
-                </div>
+                <p className="lead">
+                  {"L'État dépense 1 600 milliards d'euros par an. Au-delà du budget général (PLF), la Sécurité sociale représente à elle seule 666 Md€ — plus que le budget de l'État."}
+                </p>
               </div>
-              <div style={{ display: "flex", gap: "2rem", flexShrink: 0 }}>
-                {[
-                  { v: "491 Md€", l: "Dépenses 2024" },
-                  { v: "3 162 Md€", l: "Dette publique" },
-                ].map((s) => (
-                  <div key={s.l} style={{ textAlign: "right" }}>
-                    <div className="stat-hero">{s.v}</div>
-                    <div className="stat-hero-label">{s.l}</div>
-                  </div>
-                ))}
+              <div style={{ display: "flex", gap: "2.5rem", flexShrink: 0, flexWrap: "wrap" }}>
+                <div>
+                  <div className="stat-hero">{"1 600 Md€"}</div>
+                  <div className="stat-hero-label">{"Dépenses publiques totales"}</div>
+                </div>
+                <div>
+                  <div className="stat-hero" style={{ color: "rgba(255,255,255,.7)" }}>{"~60 %"}</div>
+                  <div className="stat-hero-label">{"Du PIB français"}</div>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* CHIFFRES CLÉS */}
+        {/* ── VUE D'ENSEMBLE DES 3 BUDGETS ── */}
         <section className="section-page">
-          <div className="container">
+          <div className="container" style={{ maxWidth: 960 }}>
             <span className="rule-rouge" />
-            <h2 className="section-titre">{"Chiffres clés 2024"}</h2>
-            <div className="grille-4">
+            <h2 className="section-titre">{"Les trois grands blocs de dépenses publiques"}</h2>
+            <p style={{ fontFamily: "var(--sans)", fontSize: "1rem", color: "var(--gris-1)", lineHeight: 1.7, marginBottom: "2rem", maxWidth: 700 }}>
+              {"Les dépenses publiques françaises se répartissent entre trois grandes sphères, chacune votée par un texte de loi distinct chaque automne."}
+            </p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              {BUDGETS.map((b) => (
+                <div key={b.id} className="carte" style={{ padding: "1.5rem 1.75rem" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem", marginBottom: "1rem" }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: ".75rem", marginBottom: ".5rem" }}>
+                        <span className="tag tag-gris">{b.tag}</span>
+                        <span style={{ fontFamily: "var(--sans)", fontWeight: 700, fontSize: "1rem", color: "var(--encre)" }}>{b.label}</span>
+                      </div>
+                      <p style={{ fontFamily: "var(--sans)", fontSize: ".875rem", color: "var(--gris-2)", lineHeight: 1.6 }}>{b.desc}</p>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontFamily: "var(--serif)", fontSize: "1.75rem", fontWeight: 700, color: b.couleur, lineHeight: 1, letterSpacing: "-.02em" }}>{fmt(b.montant)}</div>
+                    </div>
+                  </div>
+                  {/* Barre proportionnelle */}
+                  <div style={{ background: "var(--creme-fonce)", borderRadius: 3, height: 10, overflow: "hidden" }}>
+                    <div style={{ height: "100%", borderRadius: 3, width: `${(b.montant / TOTAL_DEPENSES_PUBLIQUES) * 100}%`, background: b.couleur }} />
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: ".625rem", alignItems: "center" }}>
+                    <span style={{ fontFamily: "var(--mono)", fontSize: ".75rem", color: "var(--gris-3)" }}>
+                      {((b.montant / TOTAL_DEPENSES_PUBLIQUES) * 100).toFixed(0)}{"% des dépenses publiques totales"}
+                    </span>
+                    <Link href={b.lien} style={{ fontFamily: "var(--sans)", fontSize: ".8125rem", fontWeight: 600, color: b.couleur, textDecoration: "none" }}>
+                      {b.labelLien}
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── DEUX COLONNES : ÉTAT + SÉCU ── */}
+        <section className="section-page">
+          <div className="container" style={{ maxWidth: 960 }}>
+            <div className="grille-2">
+
+              {/* PLF — Top 5 ministères */}
+              <div>
+                <div className="chart-wrapper">
+                  <div className="chart-title">{"Budget État — Top 5 ministères"}</div>
+                  <div className="chart-subtitle">{"Crédits de paiement — PLF 2025"}</div>
+                  {MINISTERES_TOP.map((m) => (
+                    <div key={m.nom} style={{ marginBottom: ".75rem" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: ".25rem" }}>
+                        <span style={{ fontFamily: "var(--sans)", fontSize: ".8125rem", color: "var(--encre)" }}>{m.nom}</span>
+                        <span style={{ display: "flex", gap: ".625rem" }}>
+                          <span style={{ fontFamily: "var(--mono)", fontSize: ".8125rem", color: "var(--encre)" }}>{fmt(m.budget)}</span>
+                          <span style={{ fontFamily: "var(--mono)", fontSize: ".75rem", color: m.evol >= 0 ? "#1E6B3C" : "var(--rouge)", minWidth: 44, textAlign: "right" }}>{m.evol >= 0 ? "+" : ""}{m.evol}%</span>
+                        </span>
+                      </div>
+                      <div style={{ background: "var(--creme-fonce)", borderRadius: 2, height: 8, overflow: "hidden" }}>
+                        <div style={{ height: "100%", borderRadius: 2, width: `${(m.budget / maxMinistere) * 100}%`, background: "var(--bleu)" }} />
+                      </div>
+                    </div>
+                  ))}
+                  <div className="chart-source">{"Source : PLF 2025, Direction du Budget"}</div>
+                  <Link href="/etat/ministeres" className="btn btn-primaire" style={{ marginTop: "1rem", fontSize: ".8125rem" }}>{"Voir tous les ministères →"}</Link>
+                </div>
+              </div>
+
+              {/* PLFSS — Branches */}
+              <div>
+                <div className="chart-wrapper">
+                  <div className="chart-title">{"Sécurité sociale — Par branche"}</div>
+                  <div className="chart-subtitle">{"Objectifs de dépenses — PLFSS 2025"}</div>
+                  {BRANCHES_SECU.map((b) => (
+                    <div key={b.label} style={{ marginBottom: ".75rem" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: ".25rem" }}>
+                        <span style={{ fontFamily: "var(--sans)", fontSize: ".8125rem", color: "var(--encre)" }}>{b.label}</span>
+                        <span style={{ display: "flex", gap: ".625rem" }}>
+                          <span style={{ fontFamily: "var(--mono)", fontSize: ".8125rem", color: "var(--encre)" }}>{fmt(b.montant)}</span>
+                          <span style={{ fontFamily: "var(--mono)", fontSize: ".75rem", color: "#1E6B3C", minWidth: 44, textAlign: "right" }}>{"+"+b.evol+"%"}</span>
+                        </span>
+                      </div>
+                      <div style={{ background: "var(--creme-fonce)", borderRadius: 2, height: 8, overflow: "hidden" }}>
+                        <div style={{ height: "100%", borderRadius: 2, width: `${(b.montant / maxBranche) * 100}%`, background: b.couleur }} />
+                      </div>
+                    </div>
+                  ))}
+                  <div className="chart-source">{"Source : PLFSS 2025, Ministère de la Santé"}</div>
+                  <Link href="/etat/secu" className="btn" style={{ marginTop: "1rem", fontSize: ".8125rem", background: "#2B8C6B", color: "white" }}>{"Détail Sécurité sociale →"}</Link>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        {/* ── DÉFICIT & DETTE ── */}
+        <section className="section-page">
+          <div className="container" style={{ maxWidth: 960 }}>
+            <span className="rule-rouge" />
+            <h2 className="section-titre">{"Déficits et dettes"}</h2>
+            <div className="grille-2">
               {[
-                { v: "491 Md€", l: "Budget général", s: "Loi de finances 2024",     c: "var(--bleu)" },
-                { v: "153 Md€", l: "Déficit public",  s: "5,1 % du PIB — objectif", c: "var(--rouge)" },
-                { v: "3 162 Md€", l: "Dette totale",  s: "111,6 % du PIB fin 2023", c: "var(--rouge)" },
-                { v: "54 Md€",  l: "Charge de dette", s: "2e poste budgétaire",     c: "#B45309" },
+                { label: "Déficit État (PLF 2025)",        v: "153 Md€",   s: "5,1 % du PIB",         c: "var(--rouge)" },
+                { label: "Déficit Sécu (PLFSS 2025)",      v: "−22 Md€",   s: "Toutes branches",       c: "var(--rouge)" },
+                { label: "Dette publique totale",           v: "3 162 Md€", s: "111,6 % du PIB — 2024", c: "var(--rouge)" },
+                { label: "Dette sociale (CADES + Acoss)",   v: "163 Md€",   s: "Fin 2025 (Cour des comptes)", c: "#B45309" },
               ].map((c) => (
-                <div key={c.l} className="carte" style={{ padding: "1.5rem" }}>
-                  <div style={{ fontFamily: "var(--serif)", fontSize: "clamp(1.5rem,3vw,2.25rem)", fontWeight: 700, color: c.c, lineHeight: 1, letterSpacing: "-.03em" }}>{c.v}</div>
-                  <div style={{ fontFamily: "var(--sans)", fontWeight: 600, color: "var(--encre)", marginTop: ".5rem", fontSize: ".9375rem" }}>{c.l}</div>
+                <div key={c.label} className="carte" style={{ padding: "1.25rem 1.5rem" }}>
+                  <div style={{ fontFamily: "var(--serif)", fontSize: "1.75rem", fontWeight: 700, color: c.c, lineHeight: 1, letterSpacing: "-.02em" }}>{c.v}</div>
+                  <div style={{ fontFamily: "var(--sans)", fontWeight: 600, color: "var(--encre)", marginTop: ".5rem", fontSize: ".9rem" }}>{c.label}</div>
                   <div style={{ fontFamily: "var(--sans)", fontSize: ".8125rem", color: "var(--gris-2)", marginTop: ".25rem" }}>{c.s}</div>
                 </div>
               ))}
             </div>
-          </div>
-        </section>
-
-        {/* GRAPHIQUE MINISTÈRES */}
-        <section className="section-page">
-          <div className="container" style={{ maxWidth: 860 }}>
-            <div className="chart-wrapper">
-              <div className="chart-title">{"Principaux ministères — Budget 2024"}</div>
-              <div className="chart-subtitle">{"En milliards d'euros, hors charges de la dette"}</div>
-              {MINISTERES.map((m) => (
-                <div key={m.nom} style={{ marginBottom: ".875rem", display: "flex", alignItems: "center", gap: "1rem" }}>
-                  <div style={{ width: 180, flexShrink: 0, fontFamily: "var(--sans)", fontSize: ".8125rem", color: "var(--encre)", textAlign: "right" }}>{m.nom}</div>
-                  <div style={{ flex: 1, background: "var(--creme-fonce)", borderRadius: 3, height: 20, overflow: "hidden" }}>
-                    <div style={{
-                      height: "100%", borderRadius: 3,
-                      width: `${(m.budget / maxB) * 100}%`,
-                      background: "var(--bleu)",
-                      transition: "width .6s ease",
-                    }} />
-                  </div>
-                  <div style={{ width: 70, flexShrink: 0, fontFamily: "var(--mono)", fontSize: ".8125rem", color: "var(--encre)" }}>{fmt(m.budget)}</div>
-                  <div style={{ width: 55, flexShrink: 0, fontFamily: "var(--mono)", fontSize: ".75rem", color: m.evol >= 0 ? "#1E6B3C" : "var(--rouge)", textAlign: "right" }}>{m.evol >= 0 ? "+" : ""}{m.evol}%</div>
-                </div>
-              ))}
-              <div className="chart-source">{"Source : PLF 2024, ministère des Finances"}</div>
-            </div>
-
-            <div style={{ marginTop: "2rem", display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-              <Link href="/etat/ministeres" className="btn btn-primaire">{"Détail par ministère →"}</Link>
-              <Link href="/etat/dette" className="btn btn-contour">{"Dette publique"}</Link>
+            <div style={{ marginTop: "1.5rem", display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+              <Link href="/etat/dette" className="btn btn-rouge">{"Dette publique →"}</Link>
+              <Link href="/sources" className="btn btn-contour">{"Sources →"}</Link>
             </div>
           </div>
         </section>
 
-        {/* COMPRENDRE */}
-        <section className="section-page">
-          <div className="container" style={{ maxWidth: 760 }}>
-            <span className="rule-rouge" />
-            <h2 className="section-titre">{"Comment fonctionne le budget de l'État ?"}</h2>
-            <p style={{ fontFamily: "var(--sans)", fontSize: "1rem", color: "var(--gris-1)", lineHeight: 1.75, marginBottom: "1.25rem" }}>
-              {"Le budget de l'État est voté chaque automne sous forme de Loi de Finances (LFI). Il distingue les dépenses de fonctionnement (salaires des fonctionnaires, dotations) des dépenses d'investissement (infrastructures, recherche)."}
-            </p>
-            <p style={{ fontFamily: "var(--sans)", fontSize: "1rem", color: "var(--gris-1)", lineHeight: 1.75 }}>
-              {"Le déficit — différence entre recettes et dépenses — s'accumule chaque année pour former la dette publique, aujourd'hui supérieure à 3 000 milliards d'euros."}
-            </p>
-            <Link href="/comprendre" className="btn btn-contour" style={{ marginTop: "1.5rem" }}>{"Guide complet →"}</Link>
-          </div>
-        </section>
       </main>
 
-      <footer style={{ borderTop: "1px solid var(--bordure)", padding: "2rem 0", marginTop: "4rem" }}>
+      <footer style={{ borderTop: "1px solid var(--bordure)", padding: "2rem 0" }}>
         <div className="container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
-          <span style={{ fontFamily: "var(--sans)", fontSize: ".8125rem", color: "var(--gris-3)" }}>{"© 2024 BudgetPublic — Données officielles open data"}</span>
-          <div style={{ display: "flex", gap: "1.5rem" }}>
-            {[{ l: "Communes", h: "/communes" }, { l: "Sources", h: "/sources" }, { l: "À propos", h: "/apropos" }].map((lk) => (
-              <Link key={lk.h} href={lk.h} style={{ fontFamily: "var(--sans)", fontSize: ".8125rem", color: "var(--gris-2)", textDecoration: "none" }}>{lk.l}</Link>
-            ))}
-          </div>
+          <span style={{ fontFamily: "var(--sans)", fontSize: ".8125rem", color: "var(--gris-3)" }}>{"© 2025 BudgetPublic — PLF & PLFSS 2025"}</span>
+          <Link href="/sources" style={{ fontFamily: "var(--sans)", fontSize: ".8125rem", color: "var(--gris-2)", textDecoration: "none" }}>{"Sources →"}</Link>
         </div>
       </footer>
     </>
